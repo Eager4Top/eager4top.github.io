@@ -3,307 +3,438 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MEXC Crypto BB Scanner</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
-            color: #fff;
-            min-height: 100vh;
-            padding: 20px;
-        }
-
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-        }
-
-        .header {
-            text-align: center;
-            margin-bottom: 30px;
-        }
-
-        .header h1 {
-            font-size: 2.5rem;
-            margin-bottom: 10px;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-        }
-
-        .header p {
-            font-size: 1.1rem;
-            opacity: 0.9;
-        }
-
-        .controls {
-            background: rgba(255,255,255,0.1);
-            border-radius: 15px;
-            padding: 20px;
-            margin-bottom: 30px;
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255,255,255,0.2);
-        }
-
-        .controls-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-            align-items: end;
-        }
-
-        .control-group {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .control-group label {
-            margin-bottom: 5px;
-            font-weight: 500;
-            font-size: 0.9rem;
-        }
-
-        .control-group input, .control-group select {
-            padding: 10px;
-            border: none;
-            border-radius: 8px;
-            background: rgba(255,255,255,0.9);
-            color: #333;
-            font-size: 1rem;
-        }
-
-        .btn {
-            padding: 12px 24px;
-            border: none;
-            border-radius: 8px;
-            font-size: 1rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        .btn-primary {
-            background: linear-gradient(45deg, #ff6b6b, #ee5a52);
-            color: white;
-        }
-
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(238, 90, 82, 0.4);
-        }
-
-        .btn-secondary {
-            background: linear-gradient(45deg, #4ecdc4, #44a08d);
-            color: white;
-        }
-
-        .btn-secondary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(78, 205, 196, 0.4);
-        }
-
-        .status {
-            text-align: center;
-            margin: 20px 0;
-            padding: 15px;
-            border-radius: 10px;
-            font-weight: 500;
-        }
-
-        .status.loading {
-            background: rgba(255, 193, 7, 0.2);
-            border: 1px solid rgba(255, 193, 7, 0.5);
-        }
-
-        .status.success {
-            background: rgba(40, 167, 69, 0.2);
-            border: 1px solid rgba(40, 167, 69, 0.5);
-        }
-
-        .status.error {
-            background: rgba(220, 53, 69, 0.2);
-            border: 1px solid rgba(220, 53, 69, 0.5);
-        }
-
-        .results {
-            display: grid;
-            gap: 20px;
-        }
-
-        .signal-card {
-            background: rgba(255,255,255,0.1);
-            border-radius: 15px;
-            padding: 20px;
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255,255,255,0.2);
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-        }
-
-        .signal-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-        }
-
-        .signal-card.buy {
-            border-left: 4px solid #28a745;
-        }
-
-        .signal-card.sell {
-            border-left: 4px solid #dc3545;
-        }
-
-        .signal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-        }
-
-        .pair-name {
-            font-size: 1.4rem;
-            font-weight: 700;
-        }
-
-        .signal-type {
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 0.9rem;
-            font-weight: 600;
-            text-transform: uppercase;
-        }
-
-        .signal-type.buy {
-            background: #28a745;
-        }
-
-        .signal-type.sell {
-            background: #dc3545;
-        }
-
-        .signal-details {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 15px;
-        }
-
-        .detail-item {
-            text-align: center;
-            padding: 10px;
-            background: rgba(255,255,255,0.1);
-            border-radius: 8px;
-        }
-
-        .detail-label {
-            font-size: 0.8rem;
-            opacity: 0.8;
-            margin-bottom: 5px;
-        }
-
-        .detail-value {
-            font-size: 1.1rem;
-            font-weight: 600;
-        }
-
-        .no-signals {
-            text-align: center;
-            padding: 40px;
-            opacity: 0.7;
-            font-size: 1.1rem;
-        }
-
-        .spinner {
-            display: inline-block;
-            width: 20px;
-            height: 20px;
-            border: 3px solid rgba(255,255,255,0.3);
-            border-radius: 50%;
-            border-top-color: #fff;
-            animation: spin 1s ease-in-out infinite;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
-        .stats {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-            margin-bottom: 20px;
-        }
-
-        .stat-card {
-            background: rgba(255,255,255,0.1);
-            border-radius: 15px;
-            padding: 20px;
-            text-align: center;
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255,255,255,0.2);
-        }
-
-        .stat-number {
-            font-size: 2rem;
-            font-weight: 700;
-            margin-bottom: 5px;
-        }
-
-        .stat-label {
-            font-size: 0.9rem;
-            opacity: 0.8;
-        }
-    </style>
+    <title>Bybit Crypto BB Scanner</title>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <div class="container">
-        <div class="header">
-            <h1>🚀 Bybit Crypto BB Scanner</h1>
-            <p>Real-time Bollinger Bands signals for cryptocurrency trading pairs</p>
+        <div class="header" role="banner">
+            <h1>🚀 BRISK AI </h1>
+            <p>Real-time signals with customizable indicators for spot and futures markets</p>
         </div>
 
-        <div class="controls">
+        <div class="controls" role="region" aria-label="Scanner controls">
+            <div id="wsStatus" class="ws-status disconnected" role="alert">
+                Bot Status: Disconnected
+            </div>
             <div class="controls-grid">
                 <div class="control-group">
-                    <label for="bbPeriod">BB Period</label>
-                    <input type="number" id="bbPeriod" value="20" min="5" max="50">
+                    <label for="indicators">Select Indicators</label>
+                    <select id="indicators" multiple aria-describedby="indicatorsDesc">
+                        <option value="bb" selected>Bollinger Bands</option>
+                        <option value="macd" selected>MACD</option>
+                        <option value="kdj" selected>KDJ</option>
+                        <option value="sar" selected>SAR</option>
+                        <option value="fib" selected>Fibonacci</option>
+                        <option value="candle" selected>Candlestick</option>
+                        <option value="bbSqueeze" selected>BB Squeeze</option>
+                        <option value="ichimoku" selected>Ichimoku Cloud</option>
+                        <option value="donchian" selected>Donchian Channels</option>
+                        <option value="stochastic" selected>Stochastic</option>
+                        <option value="supertrend" selected>Supertrend</option>
+                        <option value="ema5x" selected>EMA (5x)</option>
+                        <option value="ma5x" selected>MA (5x)</option>
+                        <option value="adx" selected>ADX</option>
+                        <option value="stochrsi5x" selected>StochRSI (5x)</option>
+                        <option value="rsi5x" selected>RSI (5x)</option>
+                    </select>
+                    <small class="sr-only" id="indicatorsDesc">Select one or more indicators to use for signal generation (hold Ctrl/Cmd to select multiple)</small>
                 </div>
                 <div class="control-group">
-                    <label for="bbStdDev">Standard Deviation</label>
-                    <input type="number" id="bbStdDev" value="2" min="1" max="3" step="0.1">
+                    <label for="fibLevels">Fibonacci Levels (%)</label>
+                    <select id="fibLevels" multiple aria-describedby="fibLevelsDesc">
+                        <option value="0" selected>0</option>
+                        <option value="23.6" selected>23.6</option>
+                        <option value="38.2" selected>38.2</option>
+                        <option value="50" selected>50</option>
+                        <option value="61.8" selected>61.8</option>
+                        <option value="78.6" selected>78.6</option>
+                        <option value="100" selected>100</option>
+                        <option value="161.8">161.8</option>
+                        <option value="261.8">261.8</option>
+                        <option value="423.6">423.6</option>
+                    </select>
+                    <small id="fibLevelsDesc" class="sr-only">Select one or more Fibonacci retracement levels (hold Ctrl/Cmd to select multiple)</small>
+                </div>
+                <div class="control-group">
+                    <label for="candlePatterns">Candlestick Patterns</label>
+                    <select id="candlePatterns" multiple aria-describedby="candlePatternsDesc">
+                        <option value="Doji" selected>Doji</option>
+                        <option value="Hammer" selected>Hammer</option>
+                        <option value="Hanging Man" selected>Hanging Man</option>
+                        <option value="Bullish Engulfing" selected>Bullish Engulfing</option>
+                        <option value="Bearish Engulfing" selected>Bearish Engulfing</option>
+                        <option value="Morning Star" selected>Morning Star</option>
+                        <option value="Evening Star" selected>Evening Star</option>
+                    </select>
+                    <small id="candlePatternsDesc" class="sr-only">Select one or more candlestick patterns to detect (hold Ctrl/Cmd to select multiple)</small>
+                </div>
+                <div class="control-group">
+                    <details>
+                        <summary>Bollinger Bands Parameters</summary>
+                        <div class="indicator-controls">
+                            <div class="control-group">
+                                <label for="bbPeriod">BB Period</label>
+                                <input type="number" id="bbPeriod" value="20" min="5" max="50" aria-describedby="bbPeriodDesc">
+                                <small id="bbPeriodDesc" class="sr-only">Bollinger Bands lookback period (5 to 50)</small>
+                            </div>
+                            <div class="control-group">
+                                <label for="bbStdDev">BB Std Deviation</label>
+                                <input type="number" id="bbStdDev" value="2" min="1" max="3" step="0.1" aria-describedby="bbStdDevDesc">
+                                <small id="bbStdDevDesc" class="sr-only">Standard deviation multiplier for Bollinger Bands (1 to 3)</small>
+                            </div>
+                            <div class="control-group">
+                                <label for="bbMargin">BB Margin (%)</label>
+                                <input type="number" id="bbMargin" value="0.2" min="0" max="5" step="0.1" aria-describedby="bbMarginDesc">
+                                <small id="bbMarginDesc" class="sr-only">Percentage margin around Bollinger Bands (0 to 5%)</small>
+                            </div>
+                        </div>
+                    </details>
+                </div>
+                <div class="control-group">
+                    <details>
+                        <summary>MACD Parameters</summary>
+                        <div class="indicator-controls">
+                            <div class="control-group">
+                                <label for="macdFast">MACD Fast Period</label>
+                                <input type="number" id="macdFast" value="12" min="5" max="20" aria-describedby="macdFastDesc">
+                                <small id="macdFastDesc" class="sr-only">MACD fast EMA period (5 to 20)</small>
+                            </div>
+                            <div class="control-group">
+                                <label for="macdSlow">MACD Slow Period</label>
+                                <input type="number" id="macdSlow" value="26" min="10" max="50" aria-describedby="macdSlowDesc">
+                                <small id="macdSlowDesc" class="sr-only">MACD slow EMA period (10 to 50)</small>
+                            </div>
+                            <div class="control-group">
+                                <label for="macdSignal">MACD Signal Period</label>
+                                <input type="number" id="macdSignal" value="9" min="5" max="20" aria-describedby="macdSignalDesc">
+                                <small id="macdSignalDesc" class="sr-only">MACD signal line period (5 to 20)</small>
+                            </div>
+                        </div>
+                    </details>
+                </div>
+                <div class="control-group">
+                    <details>
+                        <summary>KDJ Parameters</summary>
+                        <div class="indicator-controls">
+                            <div class="control-group">
+                                <label for="kdjPeriod">KDJ Period</label>
+                                <input type="number" id="kdjPeriod" value="9" min="5" max="20" aria-describedby="kdjPeriodDesc">
+                                <small id="kdjPeriodDesc" class="sr-only">KDJ lookback period (5 to 20)</small>
+                            </div>
+                            <div class="control-group">
+                                <label for="kdjK">KDJ K</label>
+                                <input type="number" id="kdjK" value="3" min="1" max="10" aria-describedby="kdjKDesc">
+                                <small id="kdjKDesc" class="sr-only">KDJ K smoothing period (1 to 10)</small>
+                            </div>
+                            <div class="control-group">
+                                <label for="kdjD">KDJ D</label>
+                                <input type="number" id="kdjD" value="3" min="1" max="10" aria-describedby="kdjDDesc">
+                                <small id="kdjDDesc" class="sr-only">KDJ D smoothing period (1 to 10)</small>
+                            </div>
+                        </div>
+                    </details>
+                </div>
+                <div class="control-group">
+                    <details>
+                        <summary>SAR Parameters</summary>
+                        <div class="indicator-controls">
+                            <div class="control-group">
+                                <label for="sarStep">SAR Step</label>
+                                <input type="number" id="sarStep" value="0.02" min="0.01" max="0.1" step="0.01" aria-describedby="sarStepDesc">
+                                <small id="sarStepDesc" class="sr-only">Parabolic SAR step (0.01 to 0.1)</small>
+                            </div>
+                            <div class="control-group">
+                                <label for="sarMaxStep">SAR Max Step</label>
+                                <input type="number" id="sarMaxStep" value="0.2" min="0.1" max="0.5" step="0.01" aria-describedby="sarMaxStepDesc">
+                                <small id="sarMaxStepDesc" class="sr-only">Parabolic SAR max step (0.1 to 0.5)</small>
+                            </div>
+                            <div class="control-group">
+                                <label for="sarMargin">SAR Margin (%)</label>
+                                <input type="number" id="sarMargin" value="0.25" min="0" max="5" step="0.1" aria-describedby="sarMarginDesc">
+                                <small id="sarMarginDesc" class="sr-only">Percentage margin around SAR (0 to 5%)</small>
+                            </div>
+                        </div>
+                    </details>
+                </div>
+                <div class="control-group">
+                    <details>
+                        <summary>Ichimoku Cloud Parameters</summary>
+                        <div class="indicator-controls">
+                            <div class="control-group">
+                                <label for="ichimokuTenkan">Tenkan-sen Period</label>
+                                <input type="number" id="ichimokuTenkan" value="9" min="5" max="20" aria-describedby="ichimokuTenkanDesc">
+                                <small id="ichimokuTenkanDesc" class="sr-only">Tenkan-sen period (5 to 20)</small>
+                            </div>
+                            <div class="control-group">
+                                <label for="ichimokuKijun">Kijun-Sen Period</label>
+                                <input type="number" id="ichimokuKijun" value="26" min="10" max="50" aria-describedby="ichimokuKijunDesc">
+                                <small id="ichimokuKijunDesc" class="sr-only">Kijun-sen period (10 to 50)</small>
+                            </div>
+                            <div class="control-group">
+                                <label for="ichimokuSenkouB">Senkou Span B Period</label>
+                                <input type="number" id="ichimokuSenkouB" value="52" min="20" max="100" aria-describedby="ichimokuSenkouBDesc">
+                                <small id="ichimokuSenkouBDesc" class="sr-only">Senkou Span B period (20 to 100)</small>
+                            </div>
+                        </div>
+                    </details>
+                </div>
+                <div class="control-group">
+                    <details>
+                        <summary>Donchian Channels Parameters</summary>
+                        <div class="indicator-controls">
+                            <div class="control-group">
+                                <label for="donchianPeriod">Period</label>
+                                <input type="number" id="donchianPeriod" value="20" min="5" max="50" aria-describedby="donchianPeriodDesc">
+                                <small id="donchianPeriodDesc" class="sr-only">Donchian Channels lookback period (5 to 50)</small>
+                            </div>
+                        </div>
+                    </details>
+                </div>
+
+                <div class="control-group">
+                    <details>
+                        <summary>Stochastic Parameters</summary>
+                        <div class="indicator-controls">
+                            <div class="control-group">
+                                <label for="stochKPeriod">K Period</label>
+                                <input type="number" id="stochKPeriod" value="14" min="5" max="20" aria-describedby="stochKPeriodDesc">
+                                <small id="stochKPeriodDesc" class="sr-only">Stochastic K period (5 to 20)</small>
+                            </div>
+                            <div class="control-group">
+                                <label for="stochDPeriod">D Period</label>
+                                <input type="number" id="stochDPeriod" value="3" min="1" max="10" value="10" aria-describedby="stochDPeriodDesc">
+                                <small id="stochDPeriodDesc" class="sr-only">Stochastic D period (1 to 10)</small>
+                            </div>
+                            <div class="control-group">
+                                <label for="stochSmooth">Smooth</label>
+                                <input type="number" id="stochSmooth" value="3" min="1" max="10" aria-describedby="stochSmoothDesc">
+                                <small id="stochSmoothDesc" class="sr-only">Stochastic smoothing period (1 to 10)</small>
+                            </div>
+                        </div>
+                    </details>
+                </div>
+                <div class="control-group">
+                    <details>
+                        <summary>Supertrend Parameters</summary>
+                        <div class="indicator-controls">
+                            <div class="control-group">
+                                <label for="supertrendPeriod">ATR Period</label>
+                                <input type="number" id="supertrendPeriod" value="10" min="5" max="20" aria-describedby="supertrendPeriodDesc">
+                                <small id="supertrendPeriodDesc" class="sr-only">Supertrend ATR period (5 to 20)</small>
+                            </div>
+                            <div class="control-group">
+                                <label for="supertrendMultiplier">Multiplier</label>
+                                <input type="number" id="supertrendMultiplier" value="3" min="1" max="5" step="0.5" aria-describedby="supertrendMultiplierDesc">
+                                <small id="supertrendMultiplierDesc" class="sr-only">Supertrend multiplier (1 to 5)</small>
+                            </div>
+                        </div>
+                    </details>
+                </div>
+                <div class="control-group">
+                    <details>
+                        <summary>EMA Periods</summary>
+                        <div class="indicator-controls">
+                            <div class="control-group">
+                                <label for="ema1">EMA 1 Period</label>
+                                <input type="number" id="ema1" value="5" min="3" max="100" aria-describedby="ema1Desc">
+                                <small id="ema1Desc" class="sr-only">EMA 1 period (3 to 100)</small>
+                            </div>
+                            <div class="control-group">
+                                <label for="ema2">EMA 2 Period</label>
+                                <input type="number" id="ema2" value="10" min="3" max="100" aria-describedby="ema2Desc">
+                                <small id="ema2Desc" class="sr-only">EMA 2 period (3 to 100)</small>
+                            </div>
+                            <div class="control-group">
+                                <label for="ema3">EMA 3 Period</label>
+                                <input type="number" id="ema3" value="20" min="3" max="100" aria-describedby="ema3Desc">
+                                <small id="ema3Desc" class="sr-only">EMA 3 period (3 to 100)</small>
+                            </div>
+                            <div class="control-group">
+                                <label for="ema4">EMA 4 Period</label>
+                                <input type="number" id="ema4" value="50" min="3" max="100" aria-describedby="ema4Desc">
+                                <small id="ema4Desc" class="sr-only">EMA 4 period (3 to 100)</small>
+                            </div>
+                            <div class="control-group">
+                                <label for="ema5">EMA 5 Period</label>
+                                <input type="number" id="ema5" value="100" min="3" max="100" aria-describedby="ema5Desc">
+                                <small id="ema5Desc" class="sr-only">EMA 5 period (3 to 100)</small>
+                            </div>
+                        </div>
+                    </details>
+                </div>
+                <div class="control-group">
+                    <details>
+                        <summary>MA Periods</summary>
+                        <div class="indicator-controls">
+                            <div class="control-group">
+                                <label for="ma1">MA 1 Period</label>
+                                <input type="number" id="ma1" value="5" min="3" max="100" aria-describedby="ma1Desc">
+                                <small id="ma1Desc" class="sr-only">MA 1 period (3 to 100)</small>
+                            </div>
+                            <div class="control-group">
+                                <label for="ma2">MA 2 Period</label>
+                                <input type="number" id="ma2" value="10" min="3" max="100" aria-describedby="ma2Desc">
+                                <small id="ma2Desc" class="sr-only">MA 2 period (3 to 100)</small>
+                            </div>
+                            <div class="control-group">
+                                <label for="ma3">MA 3 Period</label>
+                                <input type="number" id="ma3" value="20" min="3" max="100" aria-describedby="ma3Desc">
+                                <small id="ma3Desc" class="sr-only">MA 3 period (3 to 100)</small>
+                            </div>
+                            <div class="control-group">
+                                <label for="ma4">MA 4 Period</label>
+                                <input type="number" id="ma4" value="50" min="3" max="100" aria-describedby="ma4Desc">
+                                <small id="ma4Desc" class="sr-only">MA 4 period (3 to 100)</small>
+                            </div>
+                            <div class="control-group">
+                                <label for="ma5">MA 5 Period</label>
+                                <input type="number" id="ma5" value="100" min="3" max="100" aria-describedby="ma5Desc">
+                                <small id="ma5Desc" class="sr-only">MA 5 period (3 to 100)</small>
+                            </div>
+                        </div>
+                    </details>
+                </div>
+                <div class="control-group">
+                    <details>
+                        <summary>ADX Parameters</summary>
+                        <div class="indicator-controls">
+                            <div class="control-group">
+                                <label for="adxPeriod">ADX Period</label>
+                                <input type="number" id="adxPeriod" value="14" min="5" max="30" aria-describedby="adxPeriodDesc">
+                                <small id="adxPeriodDesc" class="sr-only">ADX lookback period (5 to 30)</small>
+                            </div>
+                        </div>
+                    </details>
+                </div>
+                <div class="control-group">
+                    <details>
+                        <summary>StochRSI Periods</summary>
+                        <div class="indicator-controls">
+                            <div class="control-group">
+                                <label for="stochrsi1">StochRSI 1 Period</label>
+                                <input type="number" id="stochrsi1" value="14" min="5" max="30" aria-describedby="stochrsi1Desc">
+                                <small id="stochrsi1Desc" class="sr-only">StochRSI 1 period (5 to 30)</small>
+                            </div>
+                            <div class="control-group">
+                                <label for="stochrsi2">StochRSI 2 Period</label>
+                                <input type="number" id="stochrsi2" value="14" min="5" max="30" aria-describedby="stochrsi2Desc">
+                                <small id="stochrsi2Desc" class="sr-only">StochRSI 2 period (5 to 30)</small>
+                            </div>
+                            <div class="control-group">
+                                <label for="stochrsi3">StochRSI 3 Period</label>
+                                <input type="number" id="stochrsi3" value="14" min="5" max="30" aria-describedby="stochrsi3Desc">
+                                <small id="stochrsi3Desc" class="sr-only">StochRSI 3 period (5 to 30)</small>
+                            </div>
+                            <div class="control-group">
+                                <label for="stochrsi4">StochRSI 4 Period</label>
+                                <input type="number" id="stochrsi4" value="14" min="5" max="30" aria-describedby="stochrsi4Desc">
+                                <small id="stochrsi4Desc" class="sr-only">StochRSI 4 period (5 to 30)</small>
+                            </div>
+                            <div class="control-group">
+                                <label for="stochrsi5">StochRSI 5 Period</label>
+                                <input type="number" id="stochrsi5" value="14" min="5" max="30" aria-describedby="stochrsi5Desc">
+                                <small id="stochrsi5Desc" class="sr-only">StochRSI 5 period (5 to 30)</small>
+                            </div>
+                        </div>
+                    </details>
+                </div>
+                <div class="control-group">
+                    <details>
+                        <summary>RSI (5x) Periods</summary>
+                        <div class="indicator-controls">
+                            <div class="control-group">
+                                <label for="rsi5x1">RSI 1 Period</label>
+                                <input type="number" id="rsi5x1" value="5" min="3" max="30" aria-describedby="rsi5x1Desc">
+                                <small id="rsi5x1Desc" class="sr-only">RSI 1 period (3 to 30)</small>
+                            </div>
+                            <div class="control-group">
+                                <label for="rsi5x2">RSI 2 Period</label>
+                                <input type="number" id="rsi5x2" value="7" min="3" max="30" aria-describedby="rsi5x2Desc">
+                                <small id="rsi5x2Desc" class="sr-only">RSI 2 period (3 to 30)</small>
+                            </div>
+                            <div class="control-group">
+                                <label for="rsi5x3">RSI 3 Period</label>
+                                <input type="number" id="rsi5x3" value="9" min="3" max="30" aria-describedby="rsi5x3Desc">
+                                <small id="rsi5x3Desc" class="sr-only">RSI 3 period (3 to 30)</small>
+                            </div>
+                            <div class="control-group">
+                                <label for="rsi5x4">RSI 4 Period</label>
+                                <input type="number" id="rsi5x4" value="11" min="3" max="30" aria-describedby="rsi5x4Desc">
+                                <small id="rsi5x4Desc" class="sr-only">RSI 4 period (3 to 30)</small>
+                            </div>
+                            <div class="control-group">
+                                <label for="rsi5x5">RSI 5 Period</label>
+                                <input type="number" id="rsi5x5" value="13" min="3" max="30" aria-describedby="rsi5x5Desc">
+                                <small id="rsi5x5Desc" class="sr-only">RSI 5 period (3 to 30)</small>
+                            </div>
+                        </div>
+                    </details>
                 </div>
                 <div class="control-group">
                     <label for="minVolume">Min 24h Volume (USDT)</label>
-                    <input type="number" id="minVolume" value="100000" min="0">
+                    <input type="number" id="minVolume" value="100000" min="0" aria-describedby="minVolumeDesc">
+                    <small id="minVolumeDesc" class="sr-only">Minimum 24-hour trading volume in USDT</small>
                 </div>
                 <div class="control-group">
-                    <label for="maxPairs">Max Pairs to Scan</label>
-                    <input type="number" id="maxPairs" value="20" min="5" max="50">
+                    <label for="marketType">Market Type</label>
+                    <select id="marketType" aria-describedby="marketTypeDesc">
+                        <option value="spot" selected>Spot</option>
+                        <option value="linear">Futures</option>
+                    </select>
+                    <small id="marketTypeDesc" class="sr-only">Select market type (Spot or Futures)</small>
                 </div>
                 <div class="control-group">
-                    <button class="btn btn-primary" onclick="startScanning()">
+                    <label for="intervals">Timeframes</label>
+                    <select id="intervals" multiple aria-describedby="intervalsDesc">
+                        <option value="15">15m</option>
+                        <option value="60" selected>1h</option>
+                        <option value="240">4h</option>
+                        <option value="360">6h</option>
+                        <option value="480">8h</option>
+                        <option value="720">12h</option>
+                        <option value="D">1d</option>
+                        <option value="3D">3d</option>
+                        <option value="W">1w</option>
+                        <option value="M">1M</option>
+                    </select>
+                    <small id="intervalsDesc" class="sr-only">Select one or more timeframes for scanning (hold Ctrl/Cmd to select multiple)</small>
+                </div>
+                <div class="control-group">
+                    <label for="confirmTimeframes">Confirm Timeframes</label>
+                    <select id="confirmTimeframes" multiple aria-describedby="confirmTimeframesDesc">
+                        <option value="15">15m</option>
+                        <option value="60">1h</option>
+                        <option value="240">4h</option>
+                        <option value="360">6h</option>
+                        <option value="480">8h</option>
+                        <option value="720">12h</option>
+                        <option value="D">1d</option>
+                        <option value="3D">3d</option>
+                        <option value="W">1w</option>
+                        <option value="M">1M</option>
+                    </select>
+                    <small id="confirmTimeframesDesc" class="sr-only">Select additional timeframes for signal confirmation (hold Ctrl/Cmd to select multiple)</small>
+                </div>
+                <div class="control-group">
+                    <button class="btn btn-primary" id="startScanBtn" aria-label="Start scanning for signals">
                         <span id="scanBtnText">Start Scanning</span>
                     </button>
                 </div>
                 <div class="control-group">
-                    <button class="btn btn-secondary" onclick="stopScanning()">Stop</button>
+                    <button class="btn btn-secondary" id="stopScanBtn" aria-label="Stop scanning">Stop</button>
                 </div>
             </div>
-            <div style="margin-top: 15px; padding: 10px; background: rgba(40,167,69,0.1); border-radius: 8px; border: 1px solid rgba(40,167,69,0.3);">
+            <div class="api-info">
                 <small>
-                    <strong>✅ Bybit API:</strong> Direct access to real-time market data with no CORS restrictions. 
-                    Enhanced with 200 candles for better signal accuracy and volume confirmation.
+                    <strong>✅ Bybit API:</strong> Scans all USDT pairs with customizable indicators across multiple timeframes.
                 </small>
             </div>
         </div>
 
-        <div id="status" class="status" style="display: none;"></div>
+        <div id="status" class="status" role="alert" style="display: none;"></div>
 
-        <div class="stats" id="stats" style="display: none;">
+        <div class="stats" id="stats" style="display: none;" role="region" aria-label="Scanning statistics">
             <div class="stat-card">
                 <div class="stat-number" id="totalPairs">0</div>
                 <div class="stat-label">Total Pairs</div>
@@ -322,389 +453,29 @@
             </div>
         </div>
 
-        <div class="results" id="results"></div>
+        <div class="results" id="results" role="region" aria-label="Current trading signals"></div>
+
+        <div class="history-section" id="history" role="region" aria-label="Historical trading signals">
+            <h2>Signal History</h2>
+            <div class="table-container">
+                <table class="history-table">
+                    <thead>
+                        <tr>
+                            <th>Time</th>
+                            <th>Pair</th>
+                            <th>Signal</th>
+                            <th>Price</th>
+                            <th>Strength</th>
+                            <th>Timeframe</th>
+                            <th>Market</th>
+                            <th>Indicators</th>
+                        </tr>
+                    </thead>
+                    <tbody id="historyTableBody"></tbody>
+                </table>
+            </div>
+        </div>
     </div>
-
-    <script>
-        let isScanning = false;
-        let scanInterval = null;
-        let allPairs = [];
-
-        // Bollinger Bands calculation
-        function calculateBB(prices, period = 20, stdDev = 2) {
-            if (prices.length < period) return null;
-            
-            const sma = prices.slice(-period).reduce((sum, price) => sum + price, 0) / period;
-            const variance = prices.slice(-period).reduce((sum, price) => sum + Math.pow(price - sma, 2), 0) / period;
-            const standardDeviation = Math.sqrt(variance);
-            
-            return {
-                middle: sma,
-                upper: sma + (standardDeviation * stdDev),
-                lower: sma - (standardDeviation * stdDev)
-            };
-        }
-
-        // Simple Moving Average calculation
-        function calculateSMA(prices, period) {
-            if (prices.length < period) return null;
-            return prices.slice(-period).reduce((sum, price) => sum + price, 0) / period;
-        }
-
-        // Generate trading signal
-        function generateSignal(klines, bbPeriod, bbStdDev) {
-            if (klines.length < bbPeriod + 1) return null;
-
-            const closes = klines.map(k => parseFloat(k[4])); // Close prices
-            const volumes = klines.map(k => parseFloat(k[5])); // Volumes
-            
-            const currentBB = calculateBB(closes, bbPeriod, bbStdDev);
-            const previousBB = calculateBB(closes.slice(0, -1), bbPeriod, bbStdDev);
-            
-            if (!currentBB || !previousBB) return null;
-
-            const currentPrice = closes[closes.length - 1];
-            const previousPrice = closes[closes.length - 2];
-            const avgVolume = volumes.slice(-10).reduce((sum, vol) => sum + vol, 0) / 10;
-            const currentVolume = volumes[volumes.length - 1];
-
-            let signal = null;
-            let strength = 0;
-
-            // Enhanced Buy signal: Price touches or goes below lower band and bounces back
-            if (previousPrice <= previousBB.lower && currentPrice > currentBB.lower) {
-                signal = 'BUY';
-                strength = Math.min(((currentBB.lower - previousPrice) / currentBB.lower) * 100, 5);
-                
-                // Boost strength if volume is above average
-                if (currentVolume > avgVolume * 1.2) {
-                    strength *= 1.3;
-                }
-            }
-            // Enhanced Sell signal: Price touches or goes above upper band and falls back
-            else if (previousPrice >= previousBB.upper && currentPrice < currentBB.upper) {
-                signal = 'SELL';
-                strength = Math.min(((previousPrice - currentBB.upper) / currentBB.upper) * 100, 5);
-                
-                // Boost strength if volume is above average
-                if (currentVolume > avgVolume * 1.2) {
-                    strength *= 1.3;
-                }
-            }
-            // Additional signals for extreme situations
-            else if (currentPrice <= currentBB.lower * 0.998) { // Strong oversold
-                signal = 'BUY';
-                strength = 4.5;
-            }
-            else if (currentPrice >= currentBB.upper * 1.002) { // Strong overbought
-                signal = 'SELL';
-                strength = 4.5;
-            }
-
-            if (signal) {
-                return {
-                    signal,
-                    strength: Math.min(Math.max(strength, 1), 5), // Clamp between 1-5
-                    currentPrice,
-                    bb: currentBB,
-                    volume: currentVolume,
-                    avgVolume,
-                    volumeRatio: currentVolume / avgVolume,
-                    bandPosition: ((currentPrice - currentBB.lower) / (currentBB.upper - currentBB.lower)) * 100
-                };
-            }
-
-            return null;
-        }
-
-        // Fetch market data from Bybit
-        async function fetchMarketData() {
-            try {
-                const response = await fetch('https://api.bybit.com/v5/market/tickers?category=spot');
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                
-                const data = await response.json();
-                
-                if (data.retCode !== 0) {
-                    throw new Error(`API error: ${data.retMsg}`);
-                }
-                
-                return data.result.list.filter(ticker => 
-                    ticker.symbol.endsWith('USDT') && 
-                    parseFloat(ticker.turnover24h) >= parseFloat(document.getElementById('minVolume').value)
-                );
-            } catch (error) {
-                console.error('Error fetching market data:', error);
-                // Fallback with demo data if API fails
-                return getDemoMarketData();
-            }
-        }
-
-        // Fetch kline data for a specific pair from Bybit
-        async function fetchKlineData(symbol) {
-            try {
-                const response = await fetch(`https://api.bybit.com/v5/market/kline?category=spot&symbol=${symbol}&interval=60&limit=200`);
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                
-                const data = await response.json();
-                
-                if (data.retCode !== 0) {
-                    throw new Error(`API error: ${data.retMsg}`);
-                }
-                
-                // Convert Bybit format to standard format
-                return data.result.list.map(kline => [
-                    parseInt(kline[0]), // timestamp
-                    parseFloat(kline[1]), // open
-                    parseFloat(kline[2]), // high
-                    parseFloat(kline[3]), // low
-                    parseFloat(kline[4]), // close
-                    parseFloat(kline[5]), // volume
-                    parseInt(kline[0]) + 3600000 // close time
-                ]).reverse(); // Bybit returns newest first, we need oldest first
-                
-            } catch (error) {
-                console.error(`Error fetching kline data for ${symbol}:`, error);
-                // Generate demo kline data if API fails
-                return generateDemoKlineData(symbol);
-            }
-        }
-
-        // Demo market data for testing when API is unavailable
-        function getDemoMarketData() {
-            return [
-                { symbol: 'BTCUSDT', turnover24h: '5000000', lastPrice: '43250.50' },
-                { symbol: 'ETHUSDT', turnover24h: '3000000', lastPrice: '2650.75' },
-                { symbol: 'SOLUSDT', turnover24h: '1200000', lastPrice: '98.45' },
-                { symbol: 'BNBUSDT', turnover24h: '1500000', lastPrice: '315.20' },
-                { symbol: 'XRPUSDT', turnover24h: '900000', lastPrice: '0.6150' },
-                { symbol: 'ADAUSDT', turnover24h: '800000', lastPrice: '0.4850' },
-                { symbol: 'DOTUSDT', turnover24h: '600000', lastPrice: '7.25' },
-                { symbol: 'AVAXUSDT', turnover24h: '500000', lastPrice: '38.90' },
-                { symbol: 'LINKUSDT', turnover24h: '400000', lastPrice: '14.85' },
-                { symbol: 'MATICUSDT', turnover24h: '350000', lastPrice: '0.8950' }
-            ];
-        }
-
-        // Generate demo kline data for testing
-        function generateDemoKlineData(symbol) {
-            const basePrice = getDemoMarketData().find(p => p.symbol === symbol)?.lastPrice || 100;
-            const price = parseFloat(basePrice);
-            const klines = [];
-            
-            for (let i = 199; i >= 0; i--) {
-                const time = Date.now() - (i * 3600000); // 1 hour intervals
-                const volatility = 0.02; // 2% volatility
-                const trend = Math.sin(i / 20) * 0.01; // Add some trend
-                const noise = (Math.random() - 0.5) * volatility;
-                const priceChange = trend + noise;
-                const currentPrice = price * (1 + priceChange * (i / 100));
-                const volume = Math.random() * 1000000;
-                
-                // Create realistic OHLC data
-                const open = currentPrice;
-                const close = open * (1 + (Math.random() - 0.5) * 0.01);
-                const high = Math.max(open, close) * (1 + Math.random() * 0.005);
-                const low = Math.min(open, close) * (1 - Math.random() * 0.005);
-                
-                klines.push([
-                    time,
-                    open, // open
-                    high, // high
-                    low, // low
-                    close, // close
-                    volume, // volume
-                    time + 3600000 // close time
-                ]);
-            }
-            
-            return klines;
-        }
-
-        // Update status message
-        function updateStatus(message, type = 'loading') {
-            const statusEl = document.getElementById('status');
-            statusEl.textContent = message;
-            statusEl.className = `status ${type}`;
-            statusEl.style.display = 'block';
-        }
-
-        // Update statistics
-        function updateStats(totalPairs, buySignals, sellSignals) {
-            document.getElementById('totalPairs').textContent = totalPairs;
-            document.getElementById('buySignals').textContent = buySignals;
-            document.getElementById('sellSignals').textContent = sellSignals;
-            document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString();
-            document.getElementById('stats').style.display = 'grid';
-        }
-
-        // Display results
-        function displayResults(signals) {
-            const resultsEl = document.getElementById('results');
-            
-            if (signals.length === 0) {
-                resultsEl.innerHTML = '<div class="no-signals">No trading signals found. Try adjusting your parameters.</div>';
-                return;
-            }
-
-            const signalsHtml = signals.map(signal => `
-                <div class="signal-card ${signal.signal.toLowerCase()}">
-                    <div class="signal-header">
-                        <div class="pair-name">${signal.symbol}</div>
-                        <div class="signal-type ${signal.signal.toLowerCase()}">${signal.signal}</div>
-                    </div>
-                    <div class="signal-details">
-                        <div class="detail-item">
-                            <div class="detail-label">Current Price</div>
-                            <div class="detail-value">$${signal.data.currentPrice.toFixed(6)}</div>
-                        </div>
-                        <div class="detail-item">
-                            <div class="detail-label">Upper Band</div>
-                            <div class="detail-value">$${signal.data.bb.upper.toFixed(6)}</div>
-                        </div>
-                        <div class="detail-item">
-                            <div class="detail-label">Middle Band</div>
-                            <div class="detail-value">$${signal.data.bb.middle.toFixed(6)}</div>
-                        </div>
-                        <div class="detail-item">
-                            <div class="detail-label">Lower Band</div>
-                            <div class="detail-value">$${signal.data.bb.lower.toFixed(6)}</div>
-                        </div>
-                        <div class="detail-item">
-                            <div class="detail-label">Signal Strength</div>
-                            <div class="detail-value">${signal.data.strength.toFixed(2)}/5</div>
-                        </div>
-                        <div class="detail-item">
-                            <div class="detail-label">Band Position</div>
-                            <div class="detail-value">${signal.data.bandPosition.toFixed(1)}%</div>
-                        </div>
-                        <div class="detail-item">
-                            <div class="detail-label">Volume Ratio</div>
-                            <div class="detail-value">${signal.data.volumeRatio.toFixed(2)}x</div>
-                        </div>
-                    </div>
-                </div>
-            `).join('');
-
-            resultsEl.innerHTML = signalsHtml;
-        }
-
-        // Main scanning function
-        async function scanPairs() {
-            if (!isScanning) return;
-
-            updateStatus('🔍 Scanning market pairs...', 'loading');
-
-            try {
-                // Get market data
-                const marketData = await fetchMarketData();
-                const maxPairs = parseInt(document.getElementById('maxPairs').value);
-                const topPairs = marketData
-                    .sort((a, b) => parseFloat(b.turnover24h || b.quoteVolume || 0) - parseFloat(a.turnover24h || a.quoteVolume || 0))
-                    .slice(0, maxPairs);
-
-                updateStatus(`📊 Analyzing ${topPairs.length} pairs...`, 'loading');
-
-                const bbPeriod = parseInt(document.getElementById('bbPeriod').value);
-                const bbStdDev = parseFloat(document.getElementById('bbStdDev').value);
-                const signals = [];
-
-                // Process pairs in smaller batches to avoid rate limiting
-                const batchSize = 3;
-                for (let i = 0; i < topPairs.length; i += batchSize) {
-                    if (!isScanning) break; // Allow stopping mid-scan
-                    
-                    const batch = topPairs.slice(i, i + batchSize);
-                    const batchPromises = batch.map(async (pair) => {
-                        try {
-                            const klines = await fetchKlineData(pair.symbol);
-                            if (klines && klines.length > 0) {
-                                const signal = generateSignal(klines, bbPeriod, bbStdDev);
-                                
-                                if (signal) {
-                                    return {
-                                        symbol: pair.symbol,
-                                        signal: signal.signal,
-                                        data: signal
-                                    };
-                                }
-                            }
-                        } catch (error) {
-                            console.error(`Error processing ${pair.symbol}:`, error);
-                        }
-                        return null;
-                    });
-
-                    const batchResults = await Promise.all(batchPromises);
-                    signals.push(...batchResults.filter(result => result !== null));
-
-                    // Update progress
-                    const processed = Math.min(i + batchSize, topPairs.length);
-                    updateStatus(`📊 Analyzed ${processed}/${topPairs.length} pairs... Found ${signals.length} signals`, 'loading');
-                    
-                    // Add delay between batches to respect rate limits
-                    if (i + batchSize < topPairs.length) {
-                        await new Promise(resolve => setTimeout(resolve, 2000));
-                    }
-                }
-
-                // Sort signals by strength
-                signals.sort((a, b) => b.data.strength - a.data.strength);
-
-                const buySignals = signals.filter(s => s.signal === 'BUY').length;
-                const sellSignals = signals.filter(s => s.signal === 'SELL').length;
-
-                updateStats(topPairs.length, buySignals, sellSignals);
-                displayResults(signals);
-
-                if (signals.length > 0) {
-                    updateStatus(`✅ Found ${signals.length} trading signals!`, 'success');
-                } else {
-                    updateStatus('ℹ️ No signals detected. Market may be ranging.', 'success');
-                }
-
-            } catch (error) {
-                console.error('Scanning error:', error);
-                updateStatus('❌ Error occurred during scanning. Please try again.', 'error');
-            }
-        }
-
-        // Start scanning
-        function startScanning() {
-            if (isScanning) return;
-            
-            isScanning = true;
-            document.getElementById('scanBtnText').innerHTML = '<span class="spinner"></span> Scanning...';
-            
-            // Initial scan
-            scanPairs();
-            
-            // Set up interval for continuous scanning (every 5 minutes)
-            scanInterval = setInterval(scanPairs, 5 * 60 * 1000);
-        }
-
-        // Stop scanning
-        function stopScanning() {
-            isScanning = false;
-            if (scanInterval) {
-                clearInterval(scanInterval);
-                scanInterval = null;
-            }
-            document.getElementById('scanBtnText').textContent = 'Start Scanning';
-            updateStatus('⏹️ Scanning stopped.', 'success');
-        }
-
-        // Initialize on page load
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('Bybit Crypto BB Scanner initialized');
-            updateStatus('📊 Ready to scan Bybit markets. Click "Start Scanning" to begin.', 'success');
-        });
-    </script>
+    <script src="script.js"></script>
 </body>
 </html>
