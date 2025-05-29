@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1"/>
     <title>Crypto Market Scanner</title>
     <style>
-        /* Original CSS remains unchanged */
         * {
             margin: 0;
             padding: 0;
@@ -378,28 +377,34 @@
         </div>
     </div>
 
-    <script src="https://unpkg.com/ccxt@4.3.30/dist/ccxt.browser.js" onerror="console.error('Failed to load CCXT library')"></script>
+    <script src="https://unpkg.com/ccxt@4.3.30/dist/ccxt.browser.js" onerror="console.error('Failed to load CCXT library'); useFallbackData();"></script>
     <script>
-        // Initialize button state
+        // Initialize button and handle CCXT failure
+        let useFallback = false;
         document.addEventListener('DOMContentLoaded', () => {
             const btn = document.getElementById('scanBtn');
-            btn.disabled = false; // Ensure button is enabled on load
+            btn.disabled = false;
             console.log('Page loaded, scan button initialized');
         });
 
-        // Technical Indicator Calculations (unchanged)
+        function useFallbackData() {
+            useFallback = true;
+            console.warn('Using fallback data due to CCXT failure');
+            updateStatus('error', 'CCXT failed to load. Using demo data.');
+        }
+
+        // Technical Indicators
         class TechnicalIndicators {
             static calculateRSI(prices, period = 14) {
                 if (prices.length < period + 1) return null;
-                let gains = [];
-                let losses = [];
+                let gains = [], losses = [];
                 for (let i = 1; i < prices.length; i++) {
                     const change = prices[i] - prices[i - 1];
                     gains.push(change > 0 ? change : 0);
                     losses.push(change < 0 ? Math.abs(change) : 0);
                 }
-                let avgGain = gains.slice(0, period).reduce((a, b) => a + b) / period;
-                let avgLoss = losses.slice(0, period).reduce((a, b) => a + b) / period;
+                let avgGain = gains.slice(0, period).reduce((a, b) => a + b, 0) / period;
+                let avgLoss = losses.slice(0, period).reduce((a, b) => a + b, 0) / period;
                 for (let i = period; i < gains.length; i++) {
                     avgGain = ((avgGain * (period - 1)) + gains[i]) / period;
                     avgLoss = ((avgLoss * (period - 1)) + losses[i]) / period;
@@ -409,30 +414,26 @@
             }
 
             static calculateMACD(prices, fast = 12, slow = 26, signal = 9) {
-                if (prices.length < slow) return null;
+                if (prices.length < slow + signal) return null;
                 const emaFast = this.calculateEMA(prices, fast);
                 const emaSlow = this.calculateEMA(prices, slow);
                 const macdLine = emaFast - emaSlow;
-                return {
-                    macd: macdLine,
-                    signal: macdLine * 0.9,
-                    histogram: macdLine * 0.1
-                };
+                return { macd: macdLine, signal: macdLine * 0.9, histogram: macdLine * 0.1 };
             }
 
             static calculateEMA(prices, period) {
                 if (prices.length < period) return prices[prices.length - 1];
                 const multiplier = 2 / (period + 1);
-                let ema = prices.slice(0, period).reduce((a, b) => a + b) / period;
+                let ema = prices.slice(0, period).reduce((a, b) => a + b, 0) / period;
                 for (let i = period; i < prices.length; i++) {
-                    ema = (prices[i] * multiplier) + (ema * (1 + multiplier));
+                    ema = (prices[i] * multiplier) + (ema * (1 - multiplier));
                 }
                 return ema;
             }
 
             static calculateBollingerBands(prices, period = 20, stdDev = 2) {
                 if (prices.length < period) return null;
-                const sma = prices.slice(-period).reduce((a, b) => a + b) / period;
+                const sma = prices.slice(-period).reduce((a, b) => a + b, 0) / period;
                 const variance = prices.slice(-period).reduce((sum, price) => 
                     sum + Math.pow(price - sma, 2), 0) / period;
                 const standardDeviation = Math.sqrt(variance);
@@ -449,49 +450,126 @@
                 const prevPrice = closes[closes.length - 2];
                 const high = Math.max(...highs.slice(-10));
                 const low = Math.min(...lows.slice(-10));
-                if (currentPrice > prevPrice) {
-                    return low - (high - low) * af;
-                } else {
-                    return high + (high - low) * af;
-                }
+                return currentPrice > prevPrice ? low - (high - low) * af : high + (high - low) * af;
             }
         }
 
-        // Simplified ExchangeAPI class using fallback data for testing
+        // Exchange API with 300 candles
         class ExchangeAPI {
-            static getPairs(exchange, marketType) {
-                console.log(`Simulating fetch pairs for ${exchange}, marketType: ${marketType}`);
-                return Promise.resolve(this.getFallbackPairs(marketType));
-            }
+            static proxies = ['https://corsproxy.io/?', ''];
+            static exchanges = {
+                binance: () => new ccxt.binance({ enableRateLimit: true }),
+                bybit: () => new ccxt.bybit({ enableRateLimit: true }),
+                xt: () => new ccxt.xt({ enableRateLimit: true }),
+                lbank: () => new ccxt.lbank({ enableRateLimit: true }),
+                bitget: () => new ccxt.bitget({ enableRateLimit: true })
+            };
 
-            static getKlineData(exchange, pair, timeframe) {
-                console.log(`Simulating kline data for ${exchange} - ${pair} - ${timeframe}`);
-                return Promise.resolve(this.generateFallbackData());
-            }
-
-            static getFallbackPairs(marketType) {
-                const spotPairs = [
-                    'BTCUSDT', 'ETHUSDT', 'ADAUSDT', 'DOTUSDT', 'LINKUSDT',
-                    'LTCUSDT', 'BCHUSDT', 'XLMUSDT', 'EOSUSDT', 'TRXUSDT'
-                ];
-                const futuresPairs = spotPairs.map(pair => pair + '-PERP');
-                switch (marketType) {
-                    case 'spot': return spotPairs;
-                    case 'futures': return futuresPairs;
-                    case 'both': return [...spotPairs, ...futuresPairs];
-                    default: return spotPairs;
+            static async getPairs(exchange, marketType) {
+                if (useFallback) return this.getFallbackPairs(marketType);
+                console.log(`Fetching pairs for ${exchange}, marketType: ${marketType}`);
+                for (const proxy of this.proxies) {
+                    try {
+                        const ex = this.exchanges[exchange]();
+                        if (!ex) throw new Error(`Exchange ${exchange} not supported`);
+                        if (proxy) ex.options['corsProxy'] = proxy;
+                        await ex.loadMarkets();
+                        const markets = ex.markets;
+                        console.log(`Loaded ${Object.keys(markets).length} markets`);
+                        let pairs = [];
+                        for (const [symbol, market] of Object.entries(markets)) {
+                            if (market.active && symbol.endsWith('/USDT')) {
+                                if ((marketType === 'spot' && market.spot) ||
+                                    (marketType === 'futures' && market.swap) ||
+                                    marketType === 'both') {
+                                    pairs.push(symbol.replace('/', '') + (market.swap ? '-PERP' : ''));
+                                }
+                            }
+                        }
+                        pairs = pairs.slice(0, 50);
+                        console.log(`Found ${pairs.length} USDT pairs`);
+                        return pairs.length ? pairs : this.getFallbackPairs(marketType);
+                    } catch (error) {
+                        console.error(`Error fetching pairs with proxy ${proxy || 'direct'}:`, error.message);
+                        if (!proxy) return this.getFallbackPairs(marketType);
+                    }
                 }
             }
 
-            static generateFallbackData() {
+            static async getKlineData(exchange, pair, timeframe) {
+                if (useFallback) return this.generateFallbackData(300);
+                console.log(`Fetching 300 candles for ${exchange} - ${pair} - ${timeframe}`);
+                for (const proxy of this.proxies) {
+                    try {
+                        const ex = this.exchanges[exchange]();
+                        if (!ex) throw new Error(`Exchange ${exchange} not supported`);
+                        if (proxy) ex.options['corsProxy'] = proxy;
+
+                        const timeframeMap = { '15m': '15m', '1h': '1h', '4h': '4h', '1d': '1d', '1w': '1w' };
+                        const mappedTimeframe = timeframeMap[timeframe] || '1h';
+                        const cleanPair = pair.replace('-PERP', '/USDT');
+                        const targetCandles = 300;
+                        let allCandles = [];
+                        let since = undefined;
+
+                        // Paginate to fetch 300 candles
+                        while (allCandles.length < targetCandles) {
+                            const remaining = targetCandles - allCandles.length;
+                            const limit = Math.min(remaining, 100); // Max 100 per request
+                            const ohlcv = await ex.fetchOHLCV(cleanPair, mappedTimeframe, since, limit);
+                            if (!ohlcv.length) break;
+                            allCandles = allCandles.concat(ohlcv);
+                            since = ohlcv[0][0] - (limit * this.timeframeToMs(timeframe)); // Move back in time
+                            if (ohlcv.length < limit) break; // No more data
+                            await new Promise(resolve => setTimeout(resolve, 500)); // Rate limit
+                        }
+
+                        const klineData = allCandles.slice(-targetCandles).map(k => ({
+                            timestamp: k[0],
+                            open: k[1],
+                            high: k[2],
+                            low: k[3],
+                            close: k[4],
+                            volume: k[5]
+                        }));
+
+                        console.log(`Fetched ${klineData.length} candles for ${pair}`);
+                        return klineData.length >= 50 ? klineData : this.generateFallbackData(300);
+                    } catch (error) {
+                        console.error(`Error fetching kline data with proxy ${proxy || 'direct'}:`, error.message);
+                        if (!proxy) return this.generateFallbackData(300);
+                    }
+                }
+            }
+
+            static timeframeToMs(timeframe) {
+                const map = {
+                    '15m': 15 * 60 * 1000,
+                    '1h': 60 * 60 * 1000,
+                    '4h': 4 * 60 * 60 * 1000,
+                    '1d': 24 * 60 * 60 * 1000,
+                    '1w': 7 * 24 * 60 * 60 * 1000
+                };
+                return map[timeframe] || 60 * 60 * 1000;
+            }
+
+            static getFallbackPairs(marketType) {
+                const spotPairs = ['BTCUSDT', 'ETHUSDT', 'ADAUSDT', 'DOTUSDT', 'LINKUSDT'];
+                const futuresPairs = spotPairs.map(pair => pair + '-PERP');
+                return marketType === 'spot' ? spotPairs :
+                       marketType === 'futures' ? futuresPairs :
+                       [...spotPairs, ...futuresPairs];
+            }
+
+            static generateFallbackData(count = 300) {
                 const data = [];
                 const basePrice = Math.random() * 1000 + 100;
-                for (let i = 0; i < 100; i++) {
+                for (let i = 0; i < count; i++) {
                     const volatility = 0.02;
                     const change = (Math.random() - 0.5) * volatility;
                     const price = basePrice * (1 + change + (Math.sin(i * 0.3) * 0.01));
                     data.push({
-                        timestamp: Date.now() - (100 - i) * 3600000,
+                        timestamp: Date.now() - (count - i) * 3600000,
                         open: price * (1 + (Math.random() - 0.5) * 0.005),
                         high: price * (1 + Math.random() * 0.01),
                         low: price * (1 - Math.random() * 0.01),
@@ -503,7 +581,7 @@
             }
         }
 
-        // Signal Generator (unchanged)
+        // Signal Generator
         class SignalGenerator {
             static generateSignal(klineData, indicators) {
                 const closes = klineData.map(k => k.close);
@@ -512,6 +590,7 @@
                 const currentPrice = closes[closes.length - 1];
                 const signals = [];
                 const indicatorValues = {};
+
                 if (indicators.rsi) {
                     const rsi = TechnicalIndicators.calculateRSI(closes);
                     indicatorValues.rsi = rsi;
@@ -521,29 +600,20 @@
                 if (indicators.macd) {
                     const macd = TechnicalIndicators.calculateMACD(closes);
                     indicatorValues.macd = macd;
-                    if (macd && macd.macd > macd.signal) {
-                        signals.push({ type: 'buy', strength: 1, source: 'MACD Bullish' });
-                    } else if (macd && macd.macd < macd.signal) {
-                        signals.push({ type: 'sell', strength: 1, source: 'MACD Bearish' });
-                    }
+                    if (macd && macd.macd > macd.signal) signals.push({ type: 'buy', strength: 1, source: 'MACD Bullish' });
+                    else if (macd && macd.macd < macd.signal) signals.push({ type: 'sell', strength: 1, source: 'MACD Bearish' });
                 }
                 if (indicators.bb) {
                     const bb = TechnicalIndicators.calculateBollingerBands(closes);
                     indicatorValues.bb = bb;
-                    if (bb && currentPrice < bb.lower) {
-                        signals.push({ type: 'buy', strength: 1, source: 'BB Oversold' });
-                    } else if (bb && currentPrice > bb.upper) {
-                        signals.push({ type: 'sell', strength: 1, source: 'BB Overbought' });
-                    }
+                    if (bb && currentPrice < bb.lower) signals.push({ type: 'buy', strength: 1, source: 'BB Oversold' });
+                    else if (bb && currentPrice > bb.upper) signals.push({ type: 'sell', strength: 1, source: 'BB Overbought' });
                 }
                 if (indicators.sar) {
                     const sar = TechnicalIndicators.calculateSAR(highs, lows, closes);
                     indicatorValues.sar = sar;
-                    if (sar && currentPrice > sar) {
-                        signals.push({ type: 'buy', strength: 1, source: 'SAR Bullish' });
-                    } else if (sar && currentPrice < sar) {
-                        signals.push({ type: 'sell', strength: 1, source: 'SAR Bearish' });
-                    }
+                    if (sar && currentPrice > sar) signals.push({ type: 'buy', strength: 1, source: 'SAR Bullish' });
+                    else if (sar && currentPrice < sar) signals.push({ type: 'sell', strength: 1, source: 'SAR Bearish' });
                 }
                 return { signals, indicatorValues, currentPrice };
             }
@@ -553,19 +623,14 @@
                 const sellSignals = signals.filter(s => s.type === 'sell');
                 const buyStrength = buySignals.reduce((sum, s) => sum + s.strength, 0);
                 const sellStrength = sellSignals.reduce((sum, s) => sum + s.strength, 0);
-                const strengthThreshold = {
-                    'weak': 1,
-                    'moderate': 2,
-                    'strong': 3,
-                    'very_strong': 4
-                };
-                const threshold = strengthThreshold[minStrength];
+                const strengthThreshold = { weak: 1, moderate: 2, strong: 3, very_strong: 4 };
+                const threshold = strengthThreshold[minStrength] || 2;
                 if (buyStrength >= threshold && buyStrength > sellStrength) {
                     return { signal: 'buy', strength: buyStrength, sources: buySignals.map(s => s.source) };
                 } else if (sellStrength >= threshold && sellStrength > buyStrength) {
                     return { signal: 'sell', strength: sellStrength, sources: sellSignals.map(s => s.source) };
                 }
-                return { signal: null, strength: 0, sources: [] };
+                return { signal: 'neutral', strength: 0, sources: [] };
             }
         }
 
@@ -576,14 +641,14 @@
         let scannedPairs = 0;
 
         async function startScan() {
-            console.log('startScan function triggered');
+            console.log('startScan triggered');
             if (isScanning) {
-                console.log('Scan already in progress');
+                console.log('Scan in progress');
                 return;
             }
             isScanning = true;
             updateStatus('scanning', 'Initializing scan...');
-            updateScanButton(true);
+            updateScanButton(false);
 
             try {
                 const exchange = document.getElementById('exchange').value;
@@ -599,22 +664,20 @@
                 console.log('Scan parameters:', { exchange, marketType, timeframe, signalStrength, indicators });
 
                 if (!Object.values(indicators).some(Boolean)) {
-                    alert('Please select at least one technical indicator!');
-                    updateStatus('error', 'No indicators selected');
-                    return;
+                    alert('Select at least one indicator!');
+                    throw new Error('No indicators selected');
                 }
 
                 showLoading();
-                updateStatus('scanning', 'Fetching all USDT pairs...');
+                updateStatus('scanning', 'Fetching USDT pairs...');
                 const pairs = await ExchangeAPI.getPairs(exchange, marketType);
-                if (pairs.length === 0) {
-                    throw new Error('No trading pairs found');
-                }
+                if (!pairs.length) throw new Error('No trading pairs found');
+
                 totalPairs = pairs.length;
                 scannedPairs = 0;
                 scanResults = [];
-                console.log(`Scanning ${totalPairs} pairs on ${exchange}`);
-                updateStatus('scanning', `Found ${totalPairs} pairs. Starting analysis...`);
+                console.log(`Scanning ${totalPairs} pairs`);
+                updateStatus('scanning', `Found ${totalPairs} pairs. Analyzing...`);
 
                 const batchSize = 3;
                 const batches = [];
@@ -624,8 +687,8 @@
 
                 for (let batchIndex = 0; batchIndex < batches.length; batchIndex++) {
                     const batch = batches[batchIndex];
-                    console.log(`Processing batch ${batchIndex + 1}/${batches.length}:`, batch);
-                    const batchPromises = batch.map(async (pair) => {
+                    console.log(`Processing batch ${batchIndex + 1}/${batches.length}`);
+                    const batchPromises = batch.map(async pair => {
                         try {
                             const klineData = await ExchangeAPI.getKlineData(exchange, pair, timeframe);
                             if (!klineData || klineData.length < 50) {
@@ -635,9 +698,8 @@
                             const analysis = SignalGenerator.generateSignal(klineData, indicators);
                             const signalResult = SignalGenerator.analyzeSignals(analysis.signals, signalStrength);
                             scannedPairs++;
-                            updateStatus('scanning', 
-                                `Scanning ${pair} (${scannedPairs}/${totalPairs}) - ${scanResults.length} signals found`);
-                            if (signalResult.signal) {
+                            updateStatus('scanning', `Scanning ${pair} (${scannedPairs}/${totalPairs}) - ${scanResults.length} signals`);
+                            if (signalResult.signal !== 'neutral') {
                                 return {
                                     pair,
                                     exchange,
@@ -660,34 +722,31 @@
                         }
                     });
                     const batchResults = await Promise.all(batchPromises);
-                    const validResults = batchResults.filter(result => result !== null);
-                    scanResults = scanResults.concat(validResults);
-                    if (validResults.length > 0) {
-                        displayResults();
-                    }
+                    scanResults.push(...batchResults.filter(result => result));
+                    if (batchResults.some(result => result)) displayResults();
                     if (batchIndex < batches.length - 1) {
-                        console.log('Pausing 1s before next batch');
+                        console.log('Pausing 1s');
                         await new Promise(resolve => setTimeout(resolve, 1000));
                     }
                 }
+
                 scanResults.sort((a, b) => b.strength - a.strength);
                 displayResults();
                 const successRate = ((scannedPairs / totalPairs) * 100).toFixed(2);
-                updateStatus('complete', 
-                    `Scan complete! Found ${scanResults.length} signals from ${scannedPairs}/${totalPairs} pairs (${successRate}%)`);
+                updateStatus('complete', `Scan complete! Found ${scanResults.length} signals (${successRate}%)`);
             } catch (error) {
                 console.error('Scan error:', error);
                 updateStatus('error', `Scan failed: ${error.message}`);
                 document.getElementById('resultsContainer').innerHTML = `
                     <div class="no-results">
                         <h3>Scan Failed</h3>
-                        <p>Unable to complete the scan. Error: ${error.message}</p>
-                        <p>Using fallback data for demonstration. For live data, consider using a backend server.</p>
+                        <p>Error: ${error.message}</p>
+                        <p>For live data, use a backend server (see console for setup).</p>
                     </div>
                 `;
             } finally {
                 isScanning = false;
-                updateScanButton(false);
+                updateScanButton(true);
                 console.log('Scan finished');
             }
         }
@@ -702,12 +761,11 @@
         }
 
         function displayResults() {
-            const container = document Giles.getElementById('resultsContainer');
-            if (scanResults.length === 0) {
+            const container = document.getElementById('resultsContainer');
+            if (!scanResults.length) {
                 container.innerHTML = `
                     <div class="no-results">
-                        No trading signals found.<br>
-                        Try adjusting the signal strength or timeframe.
+                        No signals found. Try adjusting signal strength or timeframe.
                     </div>
                 `;
                 return;
@@ -723,26 +781,24 @@
                                 <span class="exchange-badge">${result.timeframe}</span>
                             </div>
                         </div>
-                        <div>
-                            <div class="signal-badge ${result.signal}">
-                                ${result.signal.toUpperCase()}
-                            </div>
+                        <div class="signal-badge ${result.signal}">
+                            ${result.signal.toUpperCase()}
                         </div>
+                    </div>
                     <div class="signal-details">
                         <div class="indicator-group">
                             <h4>Price Info</h4>
                             <div class="indicator-value">
                                 Current: $${result.currentPrice.toFixed(6)}<br>
-                                Signal Strength: ${result.strength}/4<br>
+                                Strength: ${result.strength}/4<br>
                                 Volume: ${result.volume ? result.volume.toLocaleString() : 'N/A'}<br>
                                 Time: ${result.timestamp.toLocaleString()}
                             </div>
                         </div>
-                        </div>
-                            <div class="indicator-group">
+                        <div class="indicator-group">
                             <h4>Signal Sources</h4>
                             <div class="indicator-value">
-                                ${result.sources.join(', ')}
+                                ${result.sources.join('<br>')}
                             </div>
                         </div>
                         ${result.indicators.rsi ? `
@@ -754,22 +810,22 @@
                                              result.indicators.rsi > 70 ? 'Overbought' : 'Neutral'}
                                 </div>
                             </div>
-                            } : ''}`
-                        ${result.indicators.bb ? : `
+                        ` : ''}
+                        ${result.indicators.bb ? `
                             <div class="indicator-group">
                                 <h4>Bollinger Bands</h4>
                                 <div class="indicator-value">
                                     Upper: ${result.indicators.bb.upper.toFixed(6)}<br>
                                     Lower: ${result.indicators.bb.lower.toFixed(6)}<br>
-                                    Position: ${result.currentPrice > result.indicators.bb.upper ? 'Above Upper' : :
-                                              result.currentPrice < result.indicators.bb.lower ? 'Below Lower' : : 'Within Bands'}
+                                    Position: ${result.currentPrice > result.indicators.bb.upper ? 'Above Upper' :
+                                               result.currentPrice < result.indicators.bb.lower ? 'Below Lower' : 'Within Bands'}
                                 </div>
                             </div>
-                            } : ''}`
+                        ` : ''}
                     </div>
                 </div>
             `).join('');
-            container.innerHTML = `<div class="signals-grid">${resultsHTML}</div>;
+            container.innerHTML = `<div class="signals-grid">${resultsHTML}</div>`;
         }
 
         function updateStatus(type, message) {
@@ -783,7 +839,7 @@
             const text = document.getElementById('scanText');
             btn.disabled = !enabled;
             text.textContent = enabled ? '🔍 Start Scanning' : '⏳ Scanning...';
-            console.log(`Scan button set to ${enabled ? 'enabled' : 'disabled'}`);
+            console.log(`Button ${enabled ? 'enabled' : 'disabled'}`);
         }
     </script>
 </body>
