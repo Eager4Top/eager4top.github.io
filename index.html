@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BRISK AI: Bybit Trading Bot</title>
+    <title>BRISK AI</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <header>
-        <h1>BRISK AI: Bybit Trading Bot</h1>
+        <h1>BRISK AI</h1>
     </header>
     <main>
         <section class="controls">
@@ -32,7 +32,7 @@
             </div>
             <div class="control-group">
                 <label for="minVolume">Min 24h Volume (USDT):</label>
-                <input type="number" id="minVolume" value="100000">
+                <input type="number" id="minVolume" value="10000">
             </div>
             <div class="control-group">
                 <label for="indicators">Indicators:</label>
@@ -84,183 +84,164 @@
                     <option value="78.6">78.6%</option>
                 </select>
             </div>
-            <!-- Indicator Parameters -->
-            <div class="control-group">
-                <label for="bbPeriod">BB Period:</label>
-                <input type="number" id="bbPeriod" value="20">
-            </div>
-            <div class="control-group">
-                <label for="bbStdDev">BB StdDev:</label>
-                <input type="number" id="bbStdDev" step="0.1" value="2">
-            </div>
-            <div class="control-group">
-                <label for="bbMargin">BB Margin (%):</label>
-                <input type="number" id="bbMargin" step="0.1" value="0">
-            </div>
-            <div class="control-group">
-                <label for="macdFast">MACD Fast:</label>
-                <input type="number" id="macdFast" value="12">
-            </div>
-            <div class="control-group">
-                <label for="macdSlow">MACD Slow:</label>
-                <input type="number" id="macdSlow" value="26">
-            </div>
-            <div class="control-group">
-                <label for="macdSignal">MACD Signal:</label>
-                <input type="number" id="macdSignal" value="9">
-            </div>
-            <div class="control-group">
-                <label for="kdjPeriod">KDJ Period:</label>
-                <input type="number" id="kdjPeriod" value="9">
-            </div>
-            <div class="control-group">
-                <label for="kdjK">KDJ K:</label>
-                <input type="number" id="kdjK" value="3">
-            </div>
-            <div class="control-group">
-                <label for="kdjD">KDJ D:</label>
-                <input type="number" id="kdjD" value="3">
-            </div>
-            <div class="control-group">
-                <label for="sarStep">SAR Step:</label>
-                <input type="number" id="sarStep" step="0.01" value="0.02">
-            </div>
-            <div class="control-group">
-                <label for="sarMaxStep">SAR Max Step:</label>
-                <input type="number" id="sarMaxStep" step="0.01" value="0.2">
-            </div>
-            <div class="control-group">
-                <label for="sarMargin">SAR Margin (%):</label>
-                <input type="number" id="sarMargin" step="0.1" value="0">
-            </div>
-            <div class="control-group">
-                <label for="ichimokuTenkan">Ichimoku Tenkan:</label>
-                <input type="number" id="ichimokuTenkan" value="9">
-            </div>
-            <div class="control-group">
-                <label for="ichimokuKijun">Ichimoku Kijun:</label>
-                <input type="number" id="ichimokuKijun" value="26">
-            </div>
-            <div class="control-group">
-                <label for="ichimokuSenkouB">Ichimoku Senkou B:</label>
-                <input type="number" id="ichimokuSenkouB" value="52">
-            </div>
-            <div class="control-group">
-                <label for="donchianPeriod">Donchian Period:</label>
-                <input type="number" id="donchianPeriod" value="20">
-            </div>
-            <div class="control-group">
-                <label for="stochKPeriod">Stochastic K Period:</label>
-                <input type="number" id="stochKPeriod" value="14">
-            </div>
-            <div class="control-group">
-                <label for="stochDPeriod">Stochastic D Period:</label>
-                <input type="number" id="stochDPeriod" value="3">
-            </div>
-            <div class="control-group">
-                <label for="stochSmooth">Stochastic Smooth:</label>
-                <input type="number" id="stochSmooth" value="3">
-            </div>
-            <div class="control-group">
-                <label for="supertrendPeriod">Supertrend Period:</label>
-                <input type="number" id="supertrendPeriod" value="10">
-            </div>
-            <div class="control-group">
-                <label for="supertrendMultiplier">Supertrend Multiplier:</label>
-                <input type="number" id="supertrendMultiplier" step="0.1" value="3">
-            </div>
-            <div class="control-group">
-                <label for="adxPeriod">ADX Period:</label>
-                <input type="number" id="adxPeriod" value="14">
-            </div>
-            <!-- EMA Periods -->
-            <div class="control-group">
-                <label for="ema1">EMA 1 Period:</label>
-                <input type="number" id="ema1" value="10">
-            </div>
-            <div class="control-group">
-                <label for="ema2">EMA 2 Period:</label>
-                <input type="number" id="ema2" value="20">
-            </div>
-            <div class="control-group">
-                <label for="ema3">EMA 3 Period:</label>
-                <input type="number" id="ema3" value="50">
-            </div>
-            <div class="control-group">
-                <label for="ema4">EMA 4 Period:</label>
-                <input type="number" id="ema4" value="100">
-            </div>
-            <div class="control-group">
-                <label for="ema5">EMA 5 Period:</label>
-                <input type="number" id="ema5" value="200">
-            </div>
-            <!-- MA Periods -->
-            <div class="control-group">
-                <label for="ma1">MA 1 Period:</label>
-                <input type="number" id="ma1" value="10">
-            </div>
-            <div class="control-group">
-                <label for="ma2">MA 2 Period:</label>
-                <input type="number" id="ma2" value="20">
-            </div>
-            <div class="control-group">
-                <label for="ma3">MA 3 Period:</label>
-                <input type="number" id="ma3" value="50">
-            </div>
-            <div class="control-group">
-                <label for="ma4">MA 4 Period:</label>
-                <input type="number" id="ma4" value="100">
-            </div>
-            <div class="control-group">
-                <label for="ma5">MA 5 Period:</label>
-                <input type="number" id="ma5" value="200">
-            </div>
-            <!-- StochRSI Periods -->
-            <div class="control-group">
-                <label for="stochrsi1">StochRSI 1 Period:</label>
-                <input type="number" id="stochrsi1" value="14">
-            </div>
-            <div class="control-group">
-                <label for="stochrsi2">StochRSI 2 Period:</label>
-                <input type="number" id="stochrsi2" value="14">
-            </div>
-            <div class="control-group">
-                <label for="stochrsi3">StochRSI 3 Period:</label>
-                <input type="number" id="stochrsi3" value="14">
-            </div>
-            <div class="control-group">
-                <label for="stochrsi4">StochRSI 4 Period:</label>
-                <input type="number" id="stochrsi4" value="14">
-            </div>
-            <div class="stochrsi-group">
-                <label for="stochrsi5">StochRSI 5 Period:</label>
-                <input type="number" id="stochrsi5" value="14">
-            </div>
-            <!-- RSI Periods -->
-            <div class="control-group">
-                <label for="rsi5x1">RSI 1:</label>
-                <input type="number" id="rsi5x1" value="14">
-            </div>
-            <div class="control-group">
-                <label for="rsi5x2">RSI 2:</label>
-                <input type="number" id="rsi5x2" value="14">
-            </div>
-            <div class="control-group">
-                <label for="rsi5x3">RSI 3:</label>
-                <input type="number" id="rsi5x3" value="14">
-            </div>
-            <div class="control-group">
-                <label for="rsi5x4">RSI 4:</label>
-                <input type="number" id="rsi5x4" value="14">
-            </div>
-            <div class="control-group">
-                <label for="rsi5x5">RSI 5:</label>
-                <input type="number" id="rsi5x5" value="14">
-            </div>
+            <!-- Collapsible Indicator Parameters -->
+            <details class="indicator-config">
+                <summary>Bollinger Bands</summary>
+                <div class="config-group">
+                    <label for="bbPeriod">Period:</label>
+                    <input type="number" id="bbPeriod" value="20" min="1">
+                    <label for="bbStdDev">StdDev:</label>
+                    <input type="number" id="bbStdDev" step="0.1" value="2" min="0">
+                    <label for="bbMargin">Margin (%):</label>
+                    <input type="number" id="bbMargin" step="0.1" value="0" min="0">
+                </div>
+            </details>
+            <details class="indicator-config">
+                <summary>MACD</summary>
+                <div class="config-group">
+                    <label for="macdFast">Fast:</label>
+                    <input type="number" id="macdFast" value="12" min="1">
+                    <label for="macdSlow">Slow:</label>
+                    <input type="number" id="macdSlow" value="26" min="1">
+                    <label for="macdSignal">Signal:</label>
+                    <input type="number" id="macdSignal" value="9" min="1">
+                </div>
+            </details>
+            <details class="indicator-config">
+                <summary>KDJ</summary>
+                <div class="config-group">
+                    <label for="kdjPeriod">Period:</label>
+                    <input type="number" id="kdjPeriod" value="9" min="1">
+                    <label for="kdjK">K:</label>
+                    <input type="number" id="kdjK" value="3" min="1">
+                    <label for="kdjD">D:</label>
+                    <input type="number" id="kdjD" value="3" min="1">
+                </div>
+            </details>
+            <details class="indicator-config">
+                <summary>Parabolic SAR</summary>
+                <div class="config-group">
+                    <label for="sarStep">Step:</label>
+                    <input type="number" id="sarStep" step="0.01" value="0.02" min="0">
+                    <label for="sarMaxStep">Max Step:</label>
+                    <input type="number" id="sarMaxStep" step="0.01" value="0.2" min="0">
+                    <label for="sarMargin">Margin (%):</label>
+                    <input type="number" id="sarMargin" step="0.1" value="0" min="0">
+                </div>
+            </details>
+            <details class="indicator-config">
+                <summary>Ichimoku</summary>
+                <div class="config-group">
+                    <label for="ichimokuTenkan">Tenkan:</label>
+                    <input type="number" id="ichimokuTenkan" value="9" min="1">
+                    <label for="ichimokuKijun">Kijun:</label>
+                    <input type="number" id="ichimokuKijun" value="26" min="1">
+                    <label for="ichimokuSenkouB">Senkou B:</label>
+                    <input type="number" id="ichimokuSenkouB" value="52" min="1">
+                </div>
+            </details>
+            <details class="indicator-config">
+                <summary>Donchian</summary>
+                <div class="config-group">
+                    <label for="donchianPeriod">Period:</label>
+                    <input type="number" id="donchianPeriod" value="20" min="1">
+                </div>
+            </details>
+            <details class="indicator-config">
+                <summary>Stochastic</summary>
+                <div class="config-group">
+                    <label for="stochKPeriod">K Period:</label>
+                    <input type="number" id="stochKPeriod" value="14" min="1">
+                    <label for="stochDPeriod">D Period:</label>
+                    <input type="number" id="stochDPeriod" value="3" min="1">
+                    <label for="stochSmooth">Smooth:</label>
+                    <input type="number" id="stochSmooth" value="3" min="1">
+                </div>
+            </details>
+            <details class="indicator-config">
+                <summary>Supertrend</summary>
+                <div class="config-group">
+                    <label for="supertrendPeriod">Period:</label>
+                    <input type="number" id="supertrendPeriod" value="10" min="1">
+                    <label for="supertrendMultiplier">Multiplier:</label>
+                    <input type="number" id="supertrendMultiplier" step="0.1" value="3" min="0">
+                </div>
+            </details>
+            <details class="indicator-config">
+                <summary>ADX</summary>
+                <div class="config-group">
+                    <label for="adxPeriod">Period:</label>
+                    <input type="number" id="adxPeriod" value="14" min="1">
+                </div>
+            </details>
+            <details class="indicator-config">
+                <summary>EMA 5x</summary>
+                <div class="config-group">
+                    <label for="ema1">EMA 1:</label>
+                    <input type="number" id="ema1" value="10" min="1">
+                    <label for="ema2">EMA 2:</label>
+                    <input type="number" id="ema2" value="20" min="1">
+                    <label for="ema3">EMA 3:</label>
+                    <input type="number" id="ema3" value="50" min="1">
+                    <label for="ema4">EMA 4:</label>
+                    <input type="number" id="ema4" value="100" min="1">
+                    <label for="ema5">EMA 5:</label>
+                    <input type="number" id="ema5" value="200" min="1">
+                </div>
+            </details>
+            <details class="indicator-config">
+                <summary>MA 5x</summary>
+                <div class="config-group">
+                    <label for="ma1">MA 1:</label>
+                    <input type="number" id="ma1" value="10" min="1">
+                    <label for="ma2">MA 2:</label>
+                    <input type="number" id="ma2" value="20" min="1">
+                    <label for="ma3">MA 3:</label>
+                    <input type="number" id="ma3" value="50" min="1">
+                    <label for="ma4">MA 4:</label>
+                    <input type="number" id="ma4" value="100" min="1">
+                    <label for="ma5">MA 5:</label>
+                    <input type="number" id="ma5" value="200" min="1">
+                </div>
+            </details>
+            <details class="indicator-config">
+                <summary>StochRSI 5x</summary>
+                <div class="config-group">
+                    <label for="stochrsi1">StochRSI 1:</label>
+                    <input type="number" id="stochrsi1" value="14" min="1">
+                    <label for="stochrsi2">StochRSI 2:</label>
+                    <input type="number" id="stochrsi2" value="14" min="1">
+                    <label for="stochrsi3">StochRSI 3:</label>
+                    <input type="number" id="stochrsi3" value="14" min="1">
+                    <label for="stochrsi4">StochRSI 4:</label>
+                    <input type="number" id="stochrsi4" value="14" min="1">
+                    <label for="stochrsi5">StochRSI 5:</label>
+                    <input type="number" id="stochrsi5" value="14" min="1">
+                </div>
+            </details>
+            <details class="indicator-config">
+                <summary>RSI 5x</summary>
+                <div class="config-group">
+                    <label for="rsi5x1">RSI 1:</label>
+                    <input type="number" id="rsi5x1" value="14" min="1">
+                    <label for="rsi5x2">RSI 2:</label>
+                    <input type="number" id="rsi5x2" value="14" min="1">
+                    <label for="rsi5x3">RSI 3:</label>
+                    <input type="number" id="rsi5x3" value="14" min="1">
+                    <label for="rsi5x4">RSI 4:</label>
+                    <input type="number" id="rsi5x4" value="14" min="1">
+                    <label for="rsi5x5">RSI 5:</label>
+                    <input type="number" id="rsi5x5" value="14" min="1">
+                </div>
+            </details>
         </section>
         <section class="actions">
-            <button id="startScanBtn" class="scan-btn stopped">Start Scanning</button>
-            <div id="status" class="status"></div>
+            <button id="startScanBtn" class="scan-btn">Scan</button>
+            <button id="stopScanBtn" class="stop-btn" disabled>Stop Scan</button>
+            <div id="status" class="status-bar">
+                <span id="statusIcon"></span>
+                <span id="statusText"></span>
+            </div>
         </section>
         <section class="stats" id="stats" style="display: none;">
             <div class="stat">
