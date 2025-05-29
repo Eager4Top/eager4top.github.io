@@ -1,4 +1,4 @@
-/* styles.css for BRISK AI */
+/* styles.css for BRISK AI Bot */
 * {
     margin: 0;
     padding: 0;
@@ -55,47 +55,17 @@ select, input[type="number"] {
     font-size: 14px;
     border: 1px solid #ccc;
     border-radius: 4px;
-    height: 32px; /* Matches Market Type dropdown */
+    height: 32px; /* Reduced height */
     width: 100%;
     background-color: #fff;
 }
 
 select[multiple] {
-    height: 32px; /* Same as single select */
-    max-height: 100px; /* Scrollable if needed */
-    overflow-y: auto;
+    height: 80px; /* Reduced height for multiple select */
 }
 
 input[type="number"] {
     width: 100px;
-}
-
-.indicator-config {
-    background-color: #f9f9f9;
-    padding: 10px;
-    border-radius: 4px;
-    margin-bottom: 10px;
-}
-
-.indicator-config summary {
-    font-weight: bold;
-    cursor: pointer;
-    padding: 5px;
-    font-size: 14px;
-}
-
-.indicator-config summary:hover {
-    background-color: #e0e0e0;
-}
-
-.config-group {
-    display: grid;
-    gap: 8px;
-    padding: 10px;
-}
-
-.config-group label {
-    font-size: 13px;
 }
 
 .actions {
@@ -105,93 +75,53 @@ input[type="number"] {
     margin-bottom: 20px;
 }
 
-.scan-btn, .stop-btn {
+.scan-btn {
     padding: 8px 16px;
     font-size: 14px;
     border: none;
     border-radius: 4px;
     cursor: pointer;
-    transition: background-color 0.3s, transform 0.2s;
+    transition: background-color 0.3s;
 }
 
-.scan-btn {
+.scan-btn.stopped {
     background-color: #28a745;
     color: #fff;
 }
 
-.scan-btn:hover:not(:disabled) {
-    background-color: #218838;
-    transform: scale(1.05);
-}
-
-.stop-btn {
+.scan-btn.scanning {
     background-color: #dc3545;
     color: #fff;
 }
 
-.stop-btn:hover:not(:disabled) {
-    background-color: #c82333;
-    transform: scale(1.05);
-}
-
-.scan-btn:disabled, .stop-btn:disabled {
+.scan-btn:disabled {
     background-color: #ccc;
     cursor: not-allowed;
-    transform: none;
 }
 
-.status-bar {
-    display: flex;
-    align-items: center;
-    padding: 8px 12px;
+.status {
+    padding: 8px;
     border-radius: 4px;
     font-size: 14px;
-    min-width: 200px;
-    background-color: #e2e3e5;
-    color: #383d41;
-    transition: all 0.3s;
+    display: none;
 }
 
-.status-bar.success {
+.status.success {
     background-color: #d4edda;
     color: #155724;
+    display: block;
 }
 
-.status-bar.error {
+.status.error {
     background-color: #f8d7da;
     color: #721c24;
+    display: block;
 }
 
-.status-bar.loading {
+.status.loading {
     background-color: #e2e3e5;
     color: #383d41;
-    animation: pulse 1.5s infinite;
-}
-
-#statusIcon::before {
-    content: '';
-    display: inline-block;
-    width: 16px;
-    height: 16px;
-    margin-right: 8px;
-}
-
-.status-bar.success #statusIcon::before {
-    content: '✔';
-}
-
-.status-bar.error #statusIcon::before {
-    content: '⚠';
-}
-
-.status-bar.loading #statusIcon::before {
-    content: '⏳';
-}
-
-@keyframes pulse {
-    0% { opacity: 1; }
-    50% { opacity: 0.6; }
-    100% { opacity: 1; }
+    display: block;
 }
 
 .stats {
@@ -225,7 +155,7 @@ input[type="number"] {
     background-color: #fff;
     padding: 15px;
     border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 4px rgba(0, 0,0.1);
 }
 
 .signal-card.buy {
@@ -322,12 +252,7 @@ input[type="number"] {
         grid-template-columns: 1fr;
     }
 
-    .actions {
-        flex-direction: column;
-        align-items: stretch;
-    }
-
-    .scan-btn, .stop-btn {
+    .scan-btn {
         width: 100%;
     }
 }
