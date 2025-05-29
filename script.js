@@ -9,6 +9,10 @@ const CACHE_DURATION = 60 * 1000;
 const klineData = new Map();
 let reconnectAttempts = 0;
 const MAX_RECONNECT_ATTEMPTS = 5;
+const SUBSCRIPTION_LIMIT = 10; // Max subscriptions per second
+const subscriptionQueue = [];
+let lastSubscriptionTime = 0;
+const SUBSCRIPTION_INTERVAL = 1000 / SUBSCRIPTION_LIMIT;
 
 const startScanBtn = document.getElementById('startScanBtn');
 const stopScanBtn = document.getElementById('stopScanBtn');
@@ -16,6 +20,24 @@ const wsStatusEl = document.getElementById('wsStatus');
 
 startScanBtn.addEventListener('click', startScanning);
 stopScanBtn.addEventListener('click', stopScanning);
+
+// Rate-limited WebSocket subscription
+function queueSubscription(message) {
+    subscriptionQueue.push(message);
+    processSubscriptionQueue();
+}
+
+function processSubscriptionQueue() {
+    if (!ws || ws.readyState !== WebSocket.OPEN || subscriptionQueue.length === 0) return;
+    const now = Date.now();
+    if (now - lastSubscriptionTime >= SUBSCRIPTION_INTERVAL) {
+        const message = subscriptionQueue.shift();
+        ws.send(JSON.stringify(message));
+        lastSubscriptionTime = now;
+        console.log('Sent subscription:', message);
+    }
+    setTimeout(processSubscriptionQueue, SUBSCRIPTION_INTERVAL);
+}
 
 function startScanning() {
     if (isScanning) return;
@@ -126,25 +148,31 @@ function connectWebSocket(marketType, intervals) {
                 startRestPolling(marketType, intervals);
                 return;
             }
-            const symbols = tickers.map(t => t.symbol);
-            const tickerSub = {
-                op: 'subscribe',
-                args: symbols.map(symbol => `tickers.${symbol}`)
-            };
-            ws.send(JSON.stringify(tickerSub));
+            document.getElementById('stats').style.display = 'grid';
+            document.getElementById('totalPairs').textContent = tickers.length;
 
+            const symbols = tickers.map(t => t.symbol);
+            // Queue ticker subscriptions
+            symbols.forEach(symbol => {
+                queueSubscription({
+                    op: 'subscribe',
+                    args: [`tickers.${symbol}`]
+                });
+            });
+            // Queue kline subscriptions
             intervals.forEach(interval => {
                 symbols.forEach(symbol => {
-                    const klineSub = {
+                    queueSubscription({
                         op: 'subscribe',
                         args: [`kline.${interval}.${symbol}`]
-                    };
-                    ws.send(JSON.stringify(klineSub));
+                    });
                 });
             });
 
             wsPingInterval = setInterval(() => {
-                ws.send(JSON.stringify({ op: 'ping' }));
+                if (ws.readyState === WebSocket.OPEN) {
+                    ws.send(JSON.stringify({ op: 'ping' }));
+                }
             }, 30000);
         }).catch(error => {
             updateWebSocketStatus(`Bot Status: Failed to fetch symbols - ${error.message}`, 'disconnected');
@@ -161,7 +189,7 @@ function connectWebSocket(marketType, intervals) {
             } else if (data.topic.startsWith('tickers')) {
                 handleTickerUpdate(data);
             }
-        } else if (data.op === 'ping') {
+        } else if (data.op === 'pong') {
             console.log('Pong received');
         }
     };
@@ -184,10 +212,30 @@ function connectWebSocket(marketType, intervals) {
     };
 }
 
-// REST Polling Fallback
+// Axios REST Polling Fallback with Rate Limiting
 async function startRestPolling(marketType, intervals) {
     updateStatus('Scanning via REST API...', 'loading');
+    let requestCount = 0;
+    const REQUEST_LIMIT = 50; // Conservative limit per minute
+    const RESET_INTERVAL = 60000; // 1 minute
+    let lastResetTime = Date.now();
+
     async function scan() {
+        if (!isScanning) return;
+
+        // Reset request count if a minute has passed
+        const now = Date.now();
+        if (now - lastResetTime >= RESET_INTERVAL) {
+            requestCount = 0;
+            lastResetTime = now;
+        }
+
+        if (requestCount >= REQUEST_LIMIT) {
+            updateStatus('Rate limit reached. Waiting for reset...', 'error');
+            setTimeout(scan, RESET_INTERVAL - (now - lastResetTime));
+            return;
+        }
+
         try {
             const tickers = await fetchMarketData(marketType);
             document.getElementById('stats').style.display = 'grid';
@@ -202,7 +250,14 @@ async function startRestPolling(marketType, intervals) {
                 const pair = ticker.symbol;
 
                 for (const interval of intervals) {
+                    if (requestCount >= REQUEST_LIMIT) {
+                        updateStatus('Rate limit reached during scan. Waiting for reset...', 'error');
+                        setTimeout(scan, RESET_INTERVAL - (Date.now() - lastResetTime));
+                        return;
+                    }
+
                     try {
+                        requestCount++;
                         const klines = await fetchKlineData(pair, interval, marketType);
                         const signalData = generateSignal(
                             klines,
@@ -267,6 +322,12 @@ async function startRestPolling(marketType, intervals) {
                             let confirmed = true;
                             for (const confirmInterval of Array.from(document.getElementById('confirmTimeframes').selectedOptions).map(opt => opt.value)) {
                                 if (confirmInterval === interval) continue;
+                                if (requestCount >= REQUEST_LIMIT) {
+                                    updateStatus('Rate limit reached during confirmation. Waiting for reset...', 'error');
+                                    setTimeout(scan, RESET_INTERVAL - (Date.now() - lastResetTime));
+                                    return;
+                                }
+                                requestCount++;
                                 const confirmKlines = await fetchKlineData(pair, confirmInterval, marketType);
                                 const confirmSignal = generateSignal(
                                     confirmKlines,
@@ -301,7 +362,7 @@ async function startRestPolling(marketType, intervals) {
                                         parseInt(document.getElementById('ema2').value),
                                         parseInt(document.getElementById('ema3').value),
                                         parseInt(document.getElementById('ema4').value),
-                                        parseInt(document.getElementById('ema5').value)
+                                        parseInt(document.getElementById('ema5').value),
                                     ],
                                     [
                                         parseInt(document.getElementById('ma1').value),
@@ -421,8 +482,11 @@ async function fetchMarketData(marketType) {
         return marketDataCache;
     }
     try {
-        const data = await fetchWithRetry(`https://api.bybit.com/v5/market/tickers?category=${marketType}`);
-        const filteredData = data.result.list.filter(ticker =>
+        const response = await axios.get(`https://api.bybit.com/v5/market/tickers?category=${marketType}`, {
+            timeout: 5000
+        });
+        if (response.data.retCode !== 0) throw new Error(response.data.retMsg);
+        const filteredData = response.data.result.list.filter(ticker =>
             ticker.symbol.endsWith('USDT') &&
             parseFloat(ticker.turnover24h) >= parseFloat(document.getElementById('minVolume').value)
         );
@@ -430,6 +494,11 @@ async function fetchMarketData(marketType) {
         cacheTimestamp = Date.now();
         return filteredData;
     } catch (error) {
+        if (error.response && error.response.status === 429) {
+            updateStatus('Rate limit exceeded. Retrying after delay...', 'error');
+            await new Promise(resolve => setTimeout(resolve, 10000));
+            return fetchMarketData(marketType);
+        }
         console.error('Error fetching market data:', error);
         return [];
     }
@@ -437,39 +506,34 @@ async function fetchMarketData(marketType) {
 
 // Fetch Kline Data (REST)
 async function fetchKlineData(symbol, interval, marketType) {
-    const data = await fetchWithRetry(`https://api.bybit.com/v5/market/kline?category=${marketType}&symbol=${symbol}&interval=${interval}&limit=200`);
-    return data.result.list.map(kline => [
-        parseInt(kline[0]),
-        parseFloat(kline[1]),
-        parseFloat(kline[2]),
-        parseFloat(kline[3]),
-        parseFloat(kline[4]),
-        parseFloat(kline[5]),
-        parseInt(kline[0]) + 3600000
-    ]).reverse();
-}
-
-// Retry Fetch
-async function fetchWithRetry(url, retries = 3, delay = 1000) {
-    for (let i = 0; i < retries; i++) {
-        try {
-            const response = await fetch(url);
-            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-            const data = await response.json();
-            if (data.retCode !== 0) throw new Error(`API error: ${data.retMsg}`);
-            return data;
-        } catch (error) {
-            if (i === retries - 1) throw error;
-            console.warn(`Retry ${i + 1}/${retries} for ${url}: ${error.message}`);
-            await new Promise(resolve => setTimeout(resolve, delay));
+    try {
+        const response = await axios.get(`https://api.bybit.com/v5/market/kline?category=${marketType}&symbol=${encodeURIComponent(symbol)}&interval=${interval}&limit=200`, {
+            timeout: 5000
+        });
+        if (response.data.retCode !== 0) throw new Error(response.data.retMsg);
+        return response.data.result.list.map(kline => [
+            parseInt(kline[0]),
+            parseFloat(kline[1]),
+            parseFloat(kline[2]),
+            parseFloat(kline[3]),
+            parseFloat(kline[4]),
+            parseFloat(kline[5]),
+            parseInt(kline[0]) + 3600000
+        ]).reverse();
+    } catch(error) {
+        if (error.response && error.response.status === 429) {
+            updateStatus('Rate limit exceeded for kline data. Retrying after delay...', 'error');
+            await new Promise(resolve => setTimeout(resolve, 10000));
+            return fetchKlineData(symbol, interval, marketType);
         }
+        throw error('error');
     }
 }
 
 // Process Signal
 async function processSignal(symbol, interval, marketType, intervals) {
     const symbolKlines = klineData.get(symbol);
-    const klines = symbolKlines.get(interval);
+    const klines = symbolKlines.get(interval));
     if (!klines || klines.length < 100) return;
 
     const signalData = generateSignal(
@@ -499,20 +563,20 @@ async function processSignal(symbol, interval, marketType, intervals) {
         parseInt(document.getElementById('stochDPeriod').value),
         parseInt(document.getElementById('stochSmooth').value),
         parseInt(document.getElementById('supertrendPeriod').value),
-        parseFloat(document.getElementById('supertrendMultiplier').value),
+        parseFloat(document.getElementById('supertrendMultiplier').value)),
         [
             parseInt(document.getElementById('ema1').value),
             parseInt(document.getElementById('ema2').value),
             parseInt(document.getElementById('ema3').value),
             parseInt(document.getElementById('ema4').value),
-            parseInt(document.getElementById('ema5').value)
+            parseInt(document.getElementById('ema5').value),
         ],
         [
             parseInt(document.getElementById('ma1').value),
             parseInt(document.getElementById('ma2').value),
             parseInt(document.getElementById('ma3').value),
             parseInt(document.getElementById('ma4').value),
-            parseInt(document.getElementById('ma5').value)
+            parseInt(document.getElementById('ma5').value),
         ],
         parseInt(document.getElementById('adxPeriod').value),
         [
@@ -569,14 +633,14 @@ async function processSignal(symbol, interval, marketType, intervals) {
                     parseInt(document.getElementById('ema2').value),
                     parseInt(document.getElementById('ema3').value),
                     parseInt(document.getElementById('ema4').value),
-                    parseInt(document.getElementById('ema5').value)
+                    parseInt(document.getElementById('ema5').value),
                 ],
                 [
                     parseInt(document.getElementById('ma1').value),
                     parseInt(document.getElementById('ma2').value),
                     parseInt(document.getElementById('ma3').value),
                     parseInt(document.getElementById('ma4').value),
-                    parseInt(document.getElementById('ma5').value)
+                    parseInt(document.getElementById('ma5').value),
                 ],
                 parseInt(document.getElementById('adxPeriod').value),
                 [
@@ -584,14 +648,14 @@ async function processSignal(symbol, interval, marketType, intervals) {
                     parseInt(document.getElementById('stochrsi2').value),
                     parseInt(document.getElementById('stochrsi3').value),
                     parseInt(document.getElementById('stochrsi4').value),
-                    parseInt(document.getElementById('stochrsi5').value)
+                    parseInt(document.getElementById('stochrsi5').value),
                 ],
                 [
                     parseInt(document.getElementById('rsi5x1').value),
                     parseInt(document.getElementById('rsi5x2').value),
                     parseInt(document.getElementById('rsi5x3').value),
                     parseInt(document.getElementById('rsi5x4').value),
-                    parseInt(document.getElementById('rsi5x5').value)
+                    parseInt(document.getElementById('rsi5x5').value),
                 ]
             );
             if (!confirmSignal || confirmSignal.signal !== signalData.signal) {
@@ -648,7 +712,7 @@ function calculateBB(prices, period, stdDev, marginPercent) {
     return {
         middle: sma,
         upper: sma + (standardDeviation * stdDev) * (1 + margin),
-        lower: sma - (standardDeviation * stdDev) * (1 + margin),
+        lower: sma - (standardDeviation * stdDev) * (1 - margin),
         bandwidth: (sma + (standardDeviation * stdDev) - (sma - (standardDeviation * stdDev))) / sma
     };
 }
@@ -686,74 +750,4 @@ function calculateSAR(highs, lows, closes, step, maxStep, marginPercent) {
     let sar = lows[0], ep = highs[0], af = step, trend = 'up';
     const sars = [sar];
     const margin = 1 + marginPercent / 100;
-    for (let i = 1; i < closes.length; i++) {
-        if (trend === 'up') {
-            sar = sar + af * (ep - sar);
-            sar *= margin;
-            if (sar > lows[i]) {
-                trend = 'down';
-                sar = ep;
-                ep = lows[i];
-                af = step;
-            } else {
-                ep = Math.max(ep, highs[i]);
-                af = Math.min(af + step, maxStep);
-            }
-        } else {
-            sar = sar + af * (ep - sar);
-            sar /= margin;
-            if (sar < highs[i]) {
-                trend = 'up';
-                sar = ep;
-                ep = highs[i];
-                af = step;
-            } else {
-                ep = Math.min(ep, lows[i]);
-                af = Math.min(af + step, maxStep);
-            }
-        }
-        sars.push(sar);
-    }
-    return sars[sars.length - 1];
-}
-
-function calculateFibonacci(highs, lows, levels) {
-    if (highs.length < 2 || lows.length < 2) return null;
-    const period = 20;
-    const swingHigh = Math.max(...highs.slice(-period));
-    const swingLow = Math.min(...lows.slice(-period));
-    const range = swingHigh - swingLow;
-    return levels.map(level => ({
-        level: level,
-        price: swingLow + (range * level / 100)
-    }));
-}
-
-function detectCandlestickPatterns(klines, selectedPatterns) {
-    if (klines.length < 3) return null;
-    const [prev2, prev, curr] = klines.slice(-3);
-    const open = parseFloat(curr[1]), high = parseFloat(curr[2]), low = parseFloat(curr[3]), close = parseFloat(curr[4]);
-    const prevOpen = parseFloat(prev[1]), prevClose = parseFloat(prev[4]);
-    const body = Math.abs(close - open);
-    const upperShadow = high - Math.max(open, close);
-    const lowerShadow = Math.min(open, close) - low;
-
-    if (selectedPatterns.includes('Doji') && body <= (high - low) * 0.1 && upperShadow > body && lowerShadow > body) {
-        return { pattern: 'Doji', signal: null };
-    }
-    if (selectedPatterns.includes('Hammer') && body <= (high - low) * 0.3 && lowerShadow > body * 2 && prevClose < prevOpen && close > open) {
-        return { pattern: 'Hammer', signal: 'BUY' };
-    }
-    if (selectedPatterns.includes('Hanging Man') && body <= (high - low) * 0.3 && lowerShadow > body * 2 && prevClose > prevOpen && close < open) {
-        return { pattern: 'Hanging Man', signal: 'SELL' };
-    }
-    if (selectedPatterns.includes('Bullish Engulfing') && prevClose < prevOpen && close > open && open < prevClose && close > prevOpen) {
-        return { pattern: 'Bullish Engulfing', signal: 'BUY' };
-    }
-    if (selectedPatterns.includes('Bearish Engulfing') && prevClose > prevOpen && close < open && open > prevClose && close < prevOpen) {
-        return { pattern: 'Bearish Engulfing', signal: 'SELL' };
-    }
-    if (selectedPatterns.includes('Morning Star') && klines.length >= 3 && prev2[4] < prev2[1] && Math.abs(prev[4] - prev[1]) < (prev[2] - prev[3]) * 0.3 && close > open && close > prev2[1]) {
-        return { pattern: 'Morning Star', signal: 'BUY' };
-    }
-    if (selectedPatterns.includes('Evening Star') && klines.length >= 3 && prev2[4] > prev2[1] && Math.abs(prev[4] - prev[1]) < (prev[2]
+    for
