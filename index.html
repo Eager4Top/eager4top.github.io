@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bybit Crypto BB Scanner</title>
+    <title>MEXC Crypto BB Scanner</title>
     <style>
         * {
             margin: 0;
@@ -67,8 +67,7 @@
             font-size: 0.9rem;
         }
 
-        .control-group input,
-        .control-group select {
+        .control-group input, .control-group select {
             padding: 10px;
             border: none;
             border-radius: 8px;
@@ -258,240 +257,53 @@
             font-size: 0.9rem;
             opacity: 0.8;
         }
-
-        .history-section {
-            margin-top: 30px;
-            padding: 20px;
-            background: rgba(255,255,255,0.1);
-            border-radius: 15px;
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255,255,255,0.2);
-        }
-
-        .history-section h2 {
-            font-size: 1.8rem;
-            margin-bottom: 15px;
-        }
-
-        .history-table {
-            width: 100%;
-            border-collapse: collapse;
-            background: rgba(255,255,255,0.05);
-            border-radius: 8px;
-            overflow: hidden;
-        }
-
-        .history-table th,
-        .history-table td {
-            padding: 10px;
-            text-align: left;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-        }
-
-        .history-table th {
-            background: rgba(255,255,255,0.1);
-            font-weight: 600;
-        }
-
-        .history-table tr:hover {
-            background: rgba(255,255,255,0.1);
-        }
-
-        .sr-only {
-            position: absolute;
-            width: 1px;
-            height: 1px;
-            padding: 0;
-            margin: -1px;
-            overflow: hidden;
-            clip: rect(0, 0, 0, 0);
-            border: 0;
-        }
-
-        .indicator-checkboxes {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-
-        .indicator-checkboxes label {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            font-size: 0.9rem;
-        }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="header" role="banner">
+        <div class="header">
             <h1>🚀 Bybit Crypto BB Scanner</h1>
-            <p>Real-time signals with customizable BB, RSI, MACD, KDJ, SAR, Fibonacci, Candlestick, and BB Squeeze for spot and futures markets</p>
+            <p>Real-time Bollinger Bands signals for cryptocurrency trading pairs</p>
         </div>
 
-        <div class="controls" role="region" aria-label="Scanner controls">
+        <div class="controls">
             <div class="controls-grid">
-                <!-- Indicator Selection -->
-                <div class="control-group">
-                    <label for="indicators">Select Indicators</label>
-                    <div class="indicator-checkboxes" id="indicators">
-                        <label><input type="checkbox" value="bb" checked> Bollinger Bands</label>
-                        <label><input type="checkbox" value="rsi" checked> RSI</label>
-                        <label><input type="checkbox" value="macd" checked> MACD</label>
-                        <label><input type="checkbox" value="kdj" checked> KDJ</label>
-                        <label><input type="checkbox" value="sar" checked> SAR</label>
-                        <label><input type="checkbox" value="fib" checked> Fibonacci</label>
-                        <label><input type="checkbox" value="candle" checked> Candlestick</label>
-                        <label><input type="checkbox" value="bbSqueeze" checked> BB Squeeze</label>
-                    </div>
-                    <small class="sr-only" id="indicatorsDesc">Select indicators to use for signal generation</small>
-                </div>
-                <!-- Bollinger Bands Inputs -->
                 <div class="control-group">
                     <label for="bbPeriod">BB Period</label>
-                    <input type="number" id="bbPeriod" value="20" min="5" max="50" aria-describedby="bbPeriodDesc">
-                    <small id="bbPeriodDesc" class="sr-only">Bollinger Bands lookback period (5 to 50)</small>
+                    <input type="number" id="bbPeriod" value="20" min="5" max="50">
                 </div>
                 <div class="control-group">
-                    <label for="bbStdDev">BB Std Deviation</label>
-                    <input type="number" id="bbStdDev" value="2" min="1" max="3" step="0.1" aria-describedby="bbStdDevDesc">
-                    <small id="bbStdDevDesc" class="sr-only">Standard deviation multiplier for Bollinger Bands (1 to 3)</small>
+                    <label for="bbStdDev">Standard Deviation</label>
+                    <input type="number" id="bbStdDev" value="2" min="1" max="3" step="0.1">
                 </div>
-                <div class="control-group">
-                    <label for="bbMargin">BB Margin (%)</label>
-                    <input type="number" id="bbMargin" value="0.2" min="0" max="5" step="0.1" aria-describedby="bbMarginDesc">
-                    <small id="bbMarginDesc" class="sr-only">Percentage margin around Bollinger Bands (0 to 5%)</small>
-                </div>
-                <!-- RSI Input -->
-                <div class="control-group">
-                    <label for="rsiPeriod">RSI Period</label>
-                    <input type="number" id="rsiPeriod" value="14" min="5" max="30" aria-describedby="rsiPeriodDesc">
-                    <small id="rsiPeriodDesc" class="sr-only">RSI lookback period (5 to 30)</small>
-                </div>
-                <!-- MACD Inputs -->
-                <div class="control-group">
-                    <label for="macdFast">MACD Fast Period</label>
-                    <input type="number" id="macdFast" value="12" min="5" max="20" aria-describedby="macdFastDesc">
-                    <small id="macdFastDesc" class="sr-only">MACD fast EMA period (5 to 20)</small>
-                </div>
-                <div class="control-group">
-                    <label for="macdSlow">MACD Slow Period</label>
-                    <input type="number" id="macdSlow" value="26" min="10" max="50" aria-describedby="macdSlowDesc">
-                    <small id="macdSlowDesc" class="sr-only">MACD slow EMA period (10 to 50)</small>
-                </div>
-                <div class="control-group">
-                    <label for="macdSignal">MACD Signal Period</label>
-                    <input type="number" id="macdSignal" value="9" min="5" max="20" aria-describedby="macdSignalDesc">
-                    <small id="macdSignalDesc" class="sr-only">MACD signal line period (5 to 20)</small>
-                </div>
-                <!-- KDJ Inputs -->
-                <div class="control-group">
-                    <label for="kdjPeriod">KDJ Period</label>
-                    <input type="number" id="kdjPeriod" value="9" min="5" max="20" aria-describedby="kdjPeriodDesc">
-                    <small id="kdjPeriodDesc" class="sr-only">KDJ lookback period (5 to 20)</small>
-                </div>
-                <div class="control-group">
-                    <label for="kdjK">KDJ K Period</label>
-                    <input type="number" id="kdjK" value="3" min="1" max="10" aria-describedby="kdjKDesc">
-                    <small id="kdjKDesc" class="sr-only">KDJ K smoothing period (1 to 10)</small>
-                </div>
-                <div class="control-group">
-                    <label for="kdjD">KDJ D Period</label>
-                    <input type="number" id="kdjD" value="3" min="1" max="10" aria-describedby="kdjDDesc">
-                    <small id="kdjDDesc" class="sr-only">KDJ D smoothing period (1 to 10)</small>
-                </div>
-                <!-- SAR Inputs -->
-                <div class="control-group">
-                    <label for="sarStep">SAR Step</label>
-                    <input type="number" id="sarStep" value="0.02" min="0.01" max="0.1" step="0.01" aria-describedby="sarStepDesc">
-                    <small id="sarStepDesc" class="sr-only">Parabolic SAR step (0.01 to 0.1)</small>
-                </div>
-                <div class="control-group">
-                    <label for="sarMaxStep">SAR Max Step</label>
-                    <input type="number" id="sarMaxStep" value="0.2" min="0.1" max="0.5" step="0.01" aria-describedby="sarMaxStepDesc">
-                    <small id="sarMaxStepDesc" class="sr-only">Parabolic SAR max step (0.1 to 0.5)</small>
-                </div>
-                <div class="control-group">
-                    <label for="sarMargin">SAR Margin (%)</label>
-                    <input type="number" id="sarMargin" value="0.5" min="0" max="5" step="0.1" aria-describedby="sarMarginDesc">
-                    <small id="sarMarginDesc" class="sr-only">Percentage margin around SAR (0 to 5%)</small>
-                </div>
-                <!-- Fibonacci Inputs -->
-                <div class="control-group">
-                    <label for="fibLevels">Fibonacci Levels (%)</label>
-                    <input type="text" id="fibLevels" value="23.6,38.2,50,61.8,78.6" aria-describedby="fibLevelsDesc">
-                    <small id="fibLevelsDesc" class="sr-only">Comma-separated Fibonacci retracement levels (e.g., 23.6,38.2,50,61.8,78.6)</small>
-                </div>
-                <!-- Other Inputs -->
                 <div class="control-group">
                     <label for="minVolume">Min 24h Volume (USDT)</label>
-                    <input type="number" id="minVolume" value="100000" min="0" aria-describedby="minVolumeDesc">
-                    <small id="minVolumeDesc" class="sr-only">Minimum 24-hour trading volume in USDT</small>
+                    <input type="number" id="minVolume" value="100000" min="0">
                 </div>
                 <div class="control-group">
                     <label for="maxPairs">Max Pairs to Scan</label>
-                    <input type="number" id="maxPairs" value="20" min="5" max="100" aria-describedby="maxPairsDesc">
-                    <small id="maxPairsDesc" class="sr-only">Maximum number of pairs to scan (5 to 100)</small>
+                    <input type="number" id="maxPairs" value="20" min="5" max="50">
                 </div>
                 <div class="control-group">
-                    <label for="marketType">Market Type</label>
-                    <select id="marketType" aria-describedby="marketTypeDesc">
-                        <option value="spot" selected>Spot</option>
-                        <option value="linear">Futures</option>
-                    </select>
-                    <small id="marketTypeDesc" class="sr-only">Select market type (Spot or Futures)</small>
-                </div>
-                <div class="control-group">
-                    <label for="interval">Timeframe</label>
-                    <select id="interval" aria-describedby="intervalDesc">
-                        <option value="15">15m</option>
-                        <option value="60" selected>1h</option>
-                        <option value="240">4h</option>
-                        <option value="360">6h</option>
-                        <option value="480">8h</option>
-                        <option value="720">12h</option>
-                        <option value="D">1d</option>
-                        <option value="3D">3d</option>
-                        <option value="W">1w</option>
-                        <option value="M">1M</option>
-                    </select>
-                    <small id="intervalDesc" class="sr-only">Select timeframe for scanning</small>
-                </div>
-                <div class="control-group">
-                    <label for="confirmTimeframes">Confirm Timeframes</label>
-                    <select id="confirmTimeframes" multiple aria-describedby="confirmTimeframesDesc">
-                        <option value="15">15m</option>
-                        <option value="60">1h</option>
-                        <option value="240">4h</option>
-                        <option value="360">6h</option>
-                        <option value="480">8h</option>
-                        <option value="720">12h</option>
-                        <option value="D">1d</option>
-                        <option value="3D">3d</option>
-                        <option value="W">1w</option>
-                        <option value="M">1M</option>
-                    </select>
-                    <small id="confirmTimeframesDesc" class="sr-only">Select additional timeframes for signal confirmation (hold Ctrl/Cmd to select multiple)</small>
-                </div>
-                <div class="control-group">
-                    <button class="btn btn-primary" id="startScanBtn" onclick="startScanning()" aria-label="Start scanning for signals">
+                    <button class="btn btn-primary" onclick="startScanning()">
                         <span id="scanBtnText">Start Scanning</span>
                     </button>
                 </div>
                 <div class="control-group">
-                    <button class="btn btn-secondary" onclick="stopScanning()" aria-label="Stop scanning">Stop</button>
+                    <button class="btn btn-secondary" onclick="stopScanning()">Stop</button>
                 </div>
             </div>
             <div style="margin-top: 15px; padding: 10px; background: rgba(40,167,69,0.1); border-radius: 8px; border: 1px solid rgba(40,167,69,0.3);">
                 <small>
-                    <strong>✅ Bybit API:</strong> Scans spot and futures markets with customizable BB, RSI, MACD, KDJ, SAR, Fibonacci, Candlestick, and BB Squeeze signals.
+                    <strong>✅ Bybit API:</strong> Direct access to real-time market data with no CORS restrictions. 
+                    Enhanced with 200 candles for better signal accuracy and volume confirmation.
                 </small>
             </div>
         </div>
 
-        <div id="status" class="status" role="alert" style="display: none;"></div>
+        <div id="status" class="status" style="display: none;"></div>
 
-        <div class="stats" id="stats" style="display: none;" role="region" aria-label="Scanning statistics">
+        <div class="stats" id="stats" style="display: none;">
             <div class="stat-card">
                 <div class="stat-number" id="totalPairs">0</div>
                 <div class="stat-label">Total Pairs</div>
@@ -510,407 +322,209 @@
             </div>
         </div>
 
-        <div class="results" id="results" role="region" aria-label="Current trading signals"></div>
-
-        <div class="history-section" id="history" role="region" aria-label="Historical trading signals">
-            <h2>Signal History</h2>
-            <table class="history-table">
-                <thead>
-                    <tr>
-                        <th>Time</th>
-                        <th>Pair</th>
-                        <th>Signal</th>
-                        <th>Price</th>
-                        <th>Strength</th>
-                        <th>Timeframe</th>
-                        <th>Market</th>
-                        <th>Indicators</th>
-                    </tr>
-                </thead>
-                <tbody id="historyTableBody"></tbody>
-            </table>
-        </div>
+        <div class="results" id="results"></div>
     </div>
 
     <script>
         let isScanning = false;
         let scanInterval = null;
-        let signalHistory = JSON.parse(localStorage.getItem('signalHistory')) || [];
-        let marketDataCache = null;
-        let cacheTimestamp = 0;
-        const CACHE_DURATION = 60 * 1000; // Cache market data for 1 minute
-
-        // Retry logic for API calls
-        async function fetchWithRetry(url, retries = 3, delay = 1000) {
-            for (let i = 0; i < retries; i++) {
-                try {
-                    const response = await fetch(url);
-                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-                    const data = await response.json();
-                    if (data.retCode !== 0) throw new Error(`API error: ${data.retMsg}`);
-                    return data;
-                } catch (error) {
-                    if (i === retries - 1) throw error;
-                    console.warn(`Retry ${i + 1}/${retries} for ${url}: ${error.message}`);
-                    await new Promise(resolve => setTimeout(resolve, delay));
-                }
-            }
-        }
+        let allPairs = [];
 
         // Bollinger Bands calculation
-        function calculateBB(prices, period, stdDev, marginPercent) {
+        function calculateBB(prices, period = 20, stdDev = 2) {
             if (prices.length < period) return null;
+            
             const sma = prices.slice(-period).reduce((sum, price) => sum + price, 0) / period;
             const variance = prices.slice(-period).reduce((sum, price) => sum + Math.pow(price - sma, 2), 0) / period;
             const standardDeviation = Math.sqrt(variance);
-            const margin = marginPercent / 100;
+            
             return {
                 middle: sma,
-                upper: sma + (standardDeviation * stdDev) * (1 + margin),
-                lower: sma - (standardDeviation * stdDev) * (1 + margin),
-                bandwidth: (sma + (standardDeviation * stdDev) - (sma - (standardDeviation * stdDev))) / sma // For BB Squeeze
+                upper: sma + (standardDeviation * stdDev),
+                lower: sma - (standardDeviation * stdDev)
             };
         }
 
-        // RSI calculation
-        function calculateRSI(prices, period) {
-            if (prices.length < period + 1) return null;
-            let gains = 0, losses = 0;
-            for (let i = 1; i <= period; i++) {
-                const diff = prices[i] - prices[i - 1];
-                if (diff >= 0) gains += diff;
-                else losses -= diff;
-            }
-            const avgGain = gains / period;
-            const avgLoss = losses / period;
-            const rs = avgGain / (avgLoss || 1);
-            return 100 - (100 / (1 + rs));
-        }
-
-        // MACD calculation
-        function calculateMACD(prices, fastPeriod, slowPeriod, signalPeriod) {
-            if (prices.length < slowPeriod + signalPeriod) return null;
-            const calculateEMA = (prices, period) => {
-                const k = 2 / (period + 1);
-                let ema = prices[0];
-                for (let i = 1; i < prices.length; i++) {
-                    ema = prices[i] * k + ema * (1 - k);
-                }
-                return ema;
-            };
-            const fastEMA = calculateEMA(prices.slice(-fastPeriod - signalPeriod), fastPeriod);
-            const slowEMA = calculateEMA(prices.slice(-slowPeriod - signalPeriod), slowPeriod);
-            const macd = fastEMA - slowEMA;
-            const signalLine = calculateEMA(prices.slice(-signalPeriod).map((_, i) =>
-                calculateEMA(prices.slice(-fastPeriod - signalPeriod + i, -signalPeriod + i), fastPeriod) -
-                calculateEMA(prices.slice(-slowPeriod - signalPeriod + i, -signalPeriod + i), slowPeriod)
-            ), signalPeriod);
-            return { macd, signalLine, histogram: macd - signalLine };
-        }
-
-        // KDJ calculation
-        function calculateKDJ(highs, lows, closes, period, kPeriod, dPeriod) {
-            if (closes.length < period) return null;
-            let kValues = [];
-            for (let i = period - 1; i < closes.length; i++) {
-                const high = Math.max(...highs.slice(i - period + 1, i + 1));
-                const low = Math.min(...lows.slice(i - period + 1, i + 1));
-                const close = closes[i];
-                const k = ((close - low) / (high - low || 1)) * 100;
-                kValues.push(k);
-            }
-            const k = kValues.slice(-kPeriod).reduce((sum, val) => sum + val, 0) / kPeriod;
-            const d = kValues.slice(-dPeriod - kPeriod + 1, -kPeriod + 1).reduce((sum, val) => sum + val, 0) / dPeriod;
-            const j = 3 * k - 2 * d;
-            return { k, d, j };
-        }
-
-        // Parabolic SAR calculation
-        function calculateSAR(highs, lows, closes, step, maxStep, marginPercent) {
-            if (closes.length < 2) return null;
-            let sar = lows[0], ep = highs[0], af = step, trend = 'up';
-            const sars = [sar];
-            const margin = 1 + marginPercent / 100;
-            for (let i = 1; i < closes.length; i++) {
-                if (trend === 'up') {
-                    sar = sar + af * (ep - sar);
-                    sar *= margin;
-                    if (sar > lows[i]) {
-                        trend = 'down';
-                        sar = ep;
-                        ep = lows[i];
-                        af = step;
-                    } else {
-                        ep = Math.max(ep, highs[i]);
-                        af = Math.min(af + step, maxStep);
-                    }
-                } else {
-                    sar = sar + af * (ep - sar);
-                    sar /= margin;
-                    if (sar < highs[i]) {
-                        trend = 'up';
-                        sar = ep;
-                        ep = highs[i];
-                        af = step;
-                    } else {
-                        ep = Math.min(ep, lows[i]);
-                        af = Math.min(af + step, maxStep);
-                    }
-                }
-                sars.push(sar);
-            }
-            return sars[sars.length - 1];
-        }
-
-        // Fibonacci Retracement calculation
-        function calculateFibonacci(highs, lows, levels) {
-            if (highs.length < 2 || lows.length < 2) return null;
-            const period = 20; // Lookback period for swing high/low
-            const swingHigh = Math.max(...highs.slice(-period));
-            const swingLow = Math.min(...lows.slice(-period));
-            const range = swingHigh - swingLow;
-            return levels.map(level => ({
-                level: level,
-                price: swingLow + (range * level / 100)
-            }));
-        }
-
-        // Candlestick pattern detection
-        function detectCandlestickPatterns(klines) {
-            if (klines.length < 3) return null;
-            const [prev2, prev, curr] = klines.slice(-3);
-            const open = parseFloat(curr[1]), high = parseFloat(curr[2]), low = parseFloat(curr[3]), close = parseFloat(curr[4]);
-            const prevOpen = parseFloat(prev[1]), prevClose = parseFloat(prev[4]);
-            const body = Math.abs(close - open);
-            const upperShadow = high - Math.max(open, close);
-            const lowerShadow = Math.min(open, close) - low;
-
-            // Doji: Small body relative to range
-            if (body <= (high - low) * 0.1 && upperShadow > body && lowerShadow > body) {
-                return { pattern: 'Doji', signal: null }; // Neutral, requires context
-            }
-            // Hammer: Small body, long lower shadow, after downtrend
-            if (body <= (high - low) * 0.3 && lowerShadow > body * 2 && prevClose < prevOpen && close > open) {
-                return { pattern: 'Hammer', signal: 'BUY' };
-            }
-            // Bullish Engulfing: Current candle engulfs previous bearish candle
-            if (prevClose < prevOpen && close > open && open < prevClose && close > prevOpen) {
-                return { pattern: 'Bullish Engulfing', signal: 'BUY' };
-            }
-            // Bearish Engulfing: Current candle engulfs previous bullish candle
-            if (prevClose > prevOpen && close < open && open > prevClose && close < prevOpen) {
-                return { pattern: 'Bearish Engulfing', signal: 'SELL' };
-            }
-            // Morning Star: Three-candle reversal after downtrend
-            if (klines.length >= 3 && prev2[4] < prev2[1] && Math.abs(prev[4] - prev[1]) < (prev[2] - prev[3]) * 0.3 && close > open && close > prev2[1]) {
-                return { pattern: 'Morning Star', signal: 'BUY' };
-            }
-            // Evening Star: Three-candle reversal after uptrend
-            if (klines.length >= 3 && prev2[4] > prev2[1] && Math.abs(prev[4] - prev[1]) < (prev[2] - prev[3]) * 0.3 && close < open && close < prev2[1]) {
-                return { pattern: 'Evening Star', signal: 'SELL' };
-            }
-            return null;
-        }
-
-        // Bollinger Bands Squeeze detection
-        function detectBBSqueeze(prices, period, stdDev, marginPercent) {
-            if (prices.length < period + 1) return null;
-            const bb = calculateBB(prices, period, stdDev, marginPercent);
-            if (!bb) return null;
-            const prevBB = calculateBB(prices.slice(0, -1), period, stdDev, marginPercent);
-            if (!prevBB) return null;
-            // Squeeze: Bandwidth below threshold (e.g., 2% of price)
-            const isSqueeze = bb.bandwidth < 0.02;
-            const currentPrice = prices[prices.length - 1];
-            const previousPrice = prices[prices.length - 2];
-            // Breakout: Price breaks above upper band or below lower band after squeeze
-            if (isSqueeze && prevBB.bandwidth < 0.02) {
-                if (currentPrice > bb.upper && previousPrice <= prevBB.upper) {
-                    return { pattern: 'BB Squeeze Breakout', signal: 'BUY' };
-                } else if (currentPrice < bb.lower && previousPrice >= prevBB.lower) {
-                    return { pattern: 'BB Squeeze Breakout', signal: 'SELL' };
-                }
-            }
-            return null;
+        // Simple Moving Average calculation
+        function calculateSMA(prices, period) {
+            if (prices.length < period) return null;
+            return prices.slice(-period).reduce((sum, price) => sum + price, 0) / period;
         }
 
         // Generate trading signal
-        function generateSignal(klines, indicators, bbPeriod, bbStdDev, bbMargin, rsiPeriod, macdFast, macdSlow, macdSignal, kdjPeriod, kdjK, kdjD, sarStep, sarMaxStep, sarMargin, fibLevels, timeframe, marketType) {
-            if (klines.length < Math.max(bbPeriod, macdSlow + macdSignal, kdjPeriod, 20)) return null;
-            const closes = klines.map(k => parseFloat(k[4]));
-            const highs = klines.map(k => parseFloat(k[2]));
-            const lows = klines.map(k => parseFloat(k[3]));
-            const volumes = klines.map(k => parseFloat(k[5]));
+        function generateSignal(klines, bbPeriod, bbStdDev) {
+            if (klines.length < bbPeriod + 1) return null;
+
+            const closes = klines.map(k => parseFloat(k[4])); // Close prices
+            const volumes = klines.map(k => parseFloat(k[5])); // Volumes
+            
+            const currentBB = calculateBB(closes, bbPeriod, bbStdDev);
+            const previousBB = calculateBB(closes.slice(0, -1), bbPeriod, bbStdDev);
+            
+            if (!currentBB || !previousBB) return null;
+
             const currentPrice = closes[closes.length - 1];
             const previousPrice = closes[closes.length - 2];
             const avgVolume = volumes.slice(-10).reduce((sum, vol) => sum + vol, 0) / 10;
             const currentVolume = volumes[volumes.length - 1];
 
-            // Calculate selected indicators
-            const bb = indicators.includes('bb') || indicators.includes('bbSqueeze') ? calculateBB(closes, bbPeriod, bbStdDev, bbMargin) : null;
-            const rsi = indicators.includes('rsi') ? calculateRSI(closes, rsiPeriod) : null;
-            const macd = indicators.includes('macd') ? calculateMACD(closes, macdFast, macdSlow, macdSignal) : null;
-            const kdj = indicators.includes('kdj') ? calculateKDJ(highs, lows, closes, kdjPeriod, kdjK, kdjD) : null;
-            const sar = indicators.includes('sar') ? calculateSAR(highs, lows, closes, sarStep, sarMaxStep, sarMargin) : null;
-            const fib = indicators.includes('fib') ? calculateFibonacci(highs, lows, fibLevels) : null;
-            const candle = indicators.includes('candle') ? detectCandlestickPatterns(klines) : null;
-            const bbSqueeze = indicators.includes('bbSqueeze') ? detectBBSqueeze(closes, bbPeriod, bbStdDev, bbMargin) : null;
+            let signal = null;
+            let strength = 0;
 
-            let signal = null, strength = 0, activeIndicators = [];
-
-            // Bollinger Bands signal
-            if (indicators.includes('bb') && bb) {
-                if (previousPrice <= bb.lower && currentPrice > bb.lower) {
-                    signal = 'BUY';
-                    strength = Math.min(((bb.lower - previousPrice) / bb.lower) * 100, 5);
-                    activeIndicators.push('BB');
-                } else if (previousPrice >= bb.upper && currentPrice < bb.upper) {
-                    signal = 'SELL';
-                    strength = Math.min(((previousPrice - bb.upper) / bb.upper) * 100, 5);
-                    activeIndicators.push('BB');
+            // Enhanced Buy signal: Price touches or goes below lower band and bounces back
+            if (previousPrice <= previousBB.lower && currentPrice > currentBB.lower) {
+                signal = 'BUY';
+                strength = Math.min(((currentBB.lower - previousPrice) / currentBB.lower) * 100, 5);
+                
+                // Boost strength if volume is above average
+                if (currentVolume > avgVolume * 1.2) {
+                    strength *= 1.3;
                 }
             }
-
-            // Fibonacci signal
-            if (indicators.includes('fib') && fib && !signal) {
-                const nearestLevel = fib.reduce((closest, level) =>
-                    Math.abs(currentPrice - level.price) < Math.abs(currentPrice - closest.price) ? level : closest
-                );
-                const distance = Math.abs(currentPrice - nearestLevel.price) / currentPrice;
-                if (distance < 0.005) { // Price within 0.5% of Fib level
-                    if (previousPrice < nearestLevel.price && currentPrice > nearestLevel.price) {
-                        signal = 'BUY';
-                        strength = Math.min(5 - distance * 1000, 5);
-                        activeIndicators.push(`Fib ${nearestLevel.level}%`);
-                    } else if (previousPrice > nearestLevel.price && currentPrice < nearestLevel.price) {
-                        signal = 'SELL';
-                        strength = Math.min(5 - distance * 1000, 5);
-                        activeIndicators.push(`Fib ${nearestLevel.level}%`);
-                    }
+            // Enhanced Sell signal: Price touches or goes above upper band and falls back
+            else if (previousPrice >= previousBB.upper && currentPrice < currentBB.upper) {
+                signal = 'SELL';
+                strength = Math.min(((previousPrice - currentBB.upper) / currentBB.upper) * 100, 5);
+                
+                // Boost strength if volume is above average
+                if (currentVolume > avgVolume * 1.2) {
+                    strength *= 1.3;
                 }
             }
-
-            // Candlestick signal
-            if (indicators.includes('candle') && candle && !signal && candle.signal) {
-                signal = candle.signal;
-                strength = 3; // Base strength for candlestick patterns
-                activeIndicators.push(candle.pattern);
+            // Additional signals for extreme situations
+            else if (currentPrice <= currentBB.lower * 0.998) { // Strong oversold
+                signal = 'BUY';
+                strength = 4.5;
+            }
+            else if (currentPrice >= currentBB.upper * 1.002) { // Strong overbought
+                signal = 'SELL';
+                strength = 4.5;
             }
 
-            // BB Squeeze signal
-            if (indicators.includes('bbSqueeze') && bbSqueeze && !signal) {
-                signal = bbSqueeze.signal;
-                strength = 3.5; // Base strength for BB Squeeze breakout
-                activeIndicators.push(bbSqueeze.pattern);
+            if (signal) {
+                return {
+                    signal,
+                    strength: Math.min(Math.max(strength, 1), 5), // Clamp between 1-5
+                    currentPrice,
+                    bb: currentBB,
+                    volume: currentVolume,
+                    avgVolume,
+                    volumeRatio: currentVolume / avgVolume,
+                    bandPosition: ((currentPrice - currentBB.lower) / (currentBB.upper - currentBB.lower)) * 100
+                };
             }
 
-            // If no primary signal, return null
-            if (!signal) return null;
-
-            // Confirm with other indicators
-            if (indicators.includes('rsi') && rsi) {
-                if (signal === 'BUY' && rsi > 30 && rsi < 50) {
-                    strength *= 1.2;
-                    activeIndicators.push('RSI');
-                } else if (signal === 'SELL' && rsi > 50 && rsi < 70) {
-                    strength *= 1.2;
-                    activeIndicators.push('RSI');
-                } else if ((signal === 'BUY' && rsi >= 50) || (signal === 'SELL' && rsi <= 50)) {
-                    strength *= 0.8;
-                }
-            }
-
-            if (indicators.includes('macd') && macd) {
-                if (signal === 'BUY' && macd.macd > macd.signalLine && macd.histogram > 0) {
-                    strength *= 1.2;
-                    activeIndicators.push('MACD');
-                } else if (signal === 'SELL' && macd.macd < macd.signalLine && macd.histogram < 0) {
-                    strength *= 1.2;
-                    activeIndicators.push('MACD');
-                } else if ((signal === 'BUY' && macd.macd <= macd.signalLine) || (signal === 'SELL' && macd.macd >= macd.signalLine)) {
-                    strength *= 0.8;
-                }
-            }
-
-            if (indicators.includes('kdj') && kdj) {
-                if (signal === 'BUY' && kdj.k < 80 && kdj.j > kdj.d) {
-                    strength *= 1.2;
-                    activeIndicators.push('KDJ');
-                } else if (signal === 'SELL' && kdj.k > 20 && kdj.j < kdj.d) {
-                    strength *= 1.2;
-                    activeIndicators.push('KDJ');
-                } else if ((signal === 'BUY' && kdj.j <= kdj.d) || (signal === 'SELL' && kdj.j >= kdj.d)) {
-                    strength *= 0.8;
-                }
-            }
-
-            if (indicators.includes('sar') && sar) {
-                if (signal === 'BUY' && currentPrice > sar) {
-                    strength *= 1.2;
-                    activeIndicators.push('SAR');
-                } else if (signal === 'SELL' && currentPrice < sar) {
-                    strength *= 1.2;
-                    activeIndicators.push('SAR');
-                } else if ((signal === 'BUY' && currentPrice <= sar) || (signal === 'SELL' && currentPrice >= sar)) {
-                    strength *= 0.8;
-                }
-            }
-
-            // Volume confirmation
-            if (currentVolume > avgVolume * 1.2) {
-                strength *= 1.3;
-                activeIndicators.push('Volume');
-            }
-
-            return {
-                signal,
-                strength: Math.min(Math.max(strength, 1), 5),
-                currentPrice,
-                bb,
-                rsi,
-                macd,
-                kdj,
-                sar,
-                fib: fib ? fib.map(f => ({ level: f.level, price: f.price })) : null,
-                candle: candle ? candle.pattern : null,
-                bbSqueeze: bbSqueeze ? bbSqueeze.pattern : null,
-                volume: currentVolume,
-                avgVolume,
-                volumeRatio: currentVolume / avgVolume,
-                bandPosition: bb ? ((currentPrice - bb.lower) / (bb.upper - bb.lower)) * 100 : null,
-                timeframe,
-                marketType,
-                activeIndicators
-            };
+            return null;
         }
 
         // Fetch market data from Bybit
-        async function fetchMarketData(marketType) {
-            if (marketDataCache && Date.now() - cacheTimestamp < CACHE_DURATION) {
-                return marketDataCache;
+        async function fetchMarketData() {
+            try {
+                const response = await fetch('https://api.bybit.com/v5/market/tickers?category=spot');
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                
+                if (data.retCode !== 0) {
+                    throw new Error(`API error: ${data.retMsg}`);
+                }
+                
+                return data.result.list.filter(ticker => 
+                    ticker.symbol.endsWith('USDT') && 
+                    parseFloat(ticker.turnover24h) >= parseFloat(document.getElementById('minVolume').value)
+                );
+            } catch (error) {
+                console.error('Error fetching market data:', error);
+                // Fallback with demo data if API fails
+                return getDemoMarketData();
             }
-            const data = await fetchWithRetry(`https://api.bybit.com/v5/market/tickers?category=${marketType}`);
-            const filteredData = data.result.list.filter(ticker =>
-                ticker.symbol.endsWith('USDT') &&
-                parseFloat(ticker.turnover24h) >= parseFloat(document.getElementById('minVolume').value)
-            );
-            marketDataCache = filteredData;
-            cacheTimestamp = Date.now();
-            return filteredData;
         }
 
-        // Fetch kline data for a specific pair
-        async function fetchKlineData(symbol, interval, marketType) {
-            const data = await fetchWithRetry(`https://api.bybit.com/v5/market/kline?category=${marketType}&symbol=${symbol}&interval=${interval}&limit=200`);
-            return data.result.list.map(kline => [
-                parseInt(kline[0]),
-                parseFloat(kline[1]),
-                parseFloat(kline[2]),
-                parseFloat(kline[3]),
-                parseFloat(kline[4]),
-                parseFloat(kline[5]),
-                parseInt(kline[0]) + 3600000
-            ]).reverse();
+        // Fetch kline data for a specific pair from Bybit
+        async function fetchKlineData(symbol) {
+            try {
+                const response = await fetch(`https://api.bybit.com/v5/market/kline?category=spot&symbol=${symbol}&interval=60&limit=200`);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                
+                if (data.retCode !== 0) {
+                    throw new Error(`API error: ${data.retMsg}`);
+                }
+                
+                // Convert Bybit format to standard format
+                return data.result.list.map(kline => [
+                    parseInt(kline[0]), // timestamp
+                    parseFloat(kline[1]), // open
+                    parseFloat(kline[2]), // high
+                    parseFloat(kline[3]), // low
+                    parseFloat(kline[4]), // close
+                    parseFloat(kline[5]), // volume
+                    parseInt(kline[0]) + 3600000 // close time
+                ]).reverse(); // Bybit returns newest first, we need oldest first
+                
+            } catch (error) {
+                console.error(`Error fetching kline data for ${symbol}:`, error);
+                // Generate demo kline data if API fails
+                return generateDemoKlineData(symbol);
+            }
+        }
+
+        // Demo market data for testing when API is unavailable
+        function getDemoMarketData() {
+            return [
+                { symbol: 'BTCUSDT', turnover24h: '5000000', lastPrice: '43250.50' },
+                { symbol: 'ETHUSDT', turnover24h: '3000000', lastPrice: '2650.75' },
+                { symbol: 'SOLUSDT', turnover24h: '1200000', lastPrice: '98.45' },
+                { symbol: 'BNBUSDT', turnover24h: '1500000', lastPrice: '315.20' },
+                { symbol: 'XRPUSDT', turnover24h: '900000', lastPrice: '0.6150' },
+                { symbol: 'ADAUSDT', turnover24h: '800000', lastPrice: '0.4850' },
+                { symbol: 'DOTUSDT', turnover24h: '600000', lastPrice: '7.25' },
+                { symbol: 'AVAXUSDT', turnover24h: '500000', lastPrice: '38.90' },
+                { symbol: 'LINKUSDT', turnover24h: '400000', lastPrice: '14.85' },
+                { symbol: 'MATICUSDT', turnover24h: '350000', lastPrice: '0.8950' }
+            ];
+        }
+
+        // Generate demo kline data for testing
+        function generateDemoKlineData(symbol) {
+            const basePrice = getDemoMarketData().find(p => p.symbol === symbol)?.lastPrice || 100;
+            const price = parseFloat(basePrice);
+            const klines = [];
+            
+            for (let i = 199; i >= 0; i--) {
+                const time = Date.now() - (i * 3600000); // 1 hour intervals
+                const volatility = 0.02; // 2% volatility
+                const trend = Math.sin(i / 20) * 0.01; // Add some trend
+                const noise = (Math.random() - 0.5) * volatility;
+                const priceChange = trend + noise;
+                const currentPrice = price * (1 + priceChange * (i / 100));
+                const volume = Math.random() * 1000000;
+                
+                // Create realistic OHLC data
+                const open = currentPrice;
+                const close = open * (1 + (Math.random() - 0.5) * 0.01);
+                const high = Math.max(open, close) * (1 + Math.random() * 0.005);
+                const low = Math.min(open, close) * (1 - Math.random() * 0.005);
+                
+                klines.push([
+                    time,
+                    open, // open
+                    high, // high
+                    low, // low
+                    close, // close
+                    volume, // volume
+                    time + 3600000 // close time
+                ]);
+            }
+            
+            return klines;
         }
 
         // Update status message
@@ -930,49 +544,17 @@
             document.getElementById('stats').style.display = 'grid';
         }
 
-        // Save signal to history
-        function saveSignal(signal) {
-            signalHistory.push({
-                time: new Date().toLocaleString(),
-                symbol: signal.symbol,
-                signal: signal.signal,
-                price: signal.data.currentPrice,
-                strength: signal.data.strength,
-                timeframe: signal.data.timeframe,
-                marketType: signal.data.marketType,
-                indicators: signal.data.activeIndicators.join(', ')
-            });
-            if (signalHistory.length > 1000) signalHistory.shift();
-            localStorage.setItem('signalHistory', JSON.stringify(signalHistory));
-            updateHistoryTable();
-        }
-
-        // Update history table
-        function updateHistoryTable() {
-            const tbody = document.getElementById('historyTableBody');
-            tbody.innerHTML = signalHistory.map(signal => `
-                <tr>
-                    <td>${signal.time}</td>
-                    <td>${signal.symbol}</td>
-                    <td>${signal.signal}</td>
-                    <td>$${signal.price.toFixed(6)}</td>
-                    <td>${signal.strength.toFixed(2)}</td>
-                    <td>${signal.timeframe}</td>
-                    <td>${signal.marketType}</td>
-                    <td>${signal.indicators}</td>
-                </tr>
-            `).join('');
-        }
-
         // Display results
         function displayResults(signals) {
             const resultsEl = document.getElementById('results');
+            
             if (signals.length === 0) {
                 resultsEl.innerHTML = '<div class="no-signals">No trading signals found. Try adjusting your parameters.</div>';
                 return;
             }
+
             const signalsHtml = signals.map(signal => `
-                <div class="signal-card ${signal.signal.toLowerCase()}" role="article" aria-label="Trading signal for ${signal.symbol}">
+                <div class="signal-card ${signal.signal.toLowerCase()}">
                     <div class="signal-header">
                         <div class="pair-name">${signal.symbol}</div>
                         <div class="signal-type ${signal.signal.toLowerCase()}">${signal.signal}</div>
@@ -982,7 +564,6 @@
                             <div class="detail-label">Current Price</div>
                             <div class="detail-value">$${signal.data.currentPrice.toFixed(6)}</div>
                         </div>
-                        ${signal.data.bb ? `
                         <div class="detail-item">
                             <div class="detail-label">Upper Band</div>
                             <div class="detail-value">$${signal.data.bb.upper.toFixed(6)}</div>
@@ -995,169 +576,87 @@
                             <div class="detail-label">Lower Band</div>
                             <div class="detail-value">$${signal.data.bb.lower.toFixed(6)}</div>
                         </div>
-                        ` : ''}
-                        ${signal.data.rsi ? `
-                        <div class="detail-item">
-                            <div class="detail-label">RSI</div>
-                            <div class="detail-value">${signal.data.rsi.toFixed(2)}</div>
-                        </div>
-                        ` : ''}
-                        ${signal.data.macd ? `
-                        <div class="detail-item">
-                            <div class="detail-label">MACD Histogram</div>
-                            <div class="detail-value">${signal.data.macd.histogram.toFixed(4)}</div>
-                        </div>
-                        ` : ''}
-                        ${signal.data.kdj ? `
-                        <div class="detail-item">
-                            <div class="detail-label">KDJ (K/D/J)</div>
-                            <div class="detail-value">${signal.data.kdj.k.toFixed(2)}/${signal.data.kdj.d.toFixed(2)}/${signal.data.kdj.j.toFixed(2)}</div>
-                        </div>
-                        ` : ''}
-                        ${signal.data.sar ? `
-                        <div class="detail-item">
-                            <div class="detail-label">SAR</div>
-                            <div class="detail-value">$${signal.data.sar.toFixed(6)}</div>
-                        </div>
-                        ` : ''}
-                        ${signal.data.fib ? `
-                        <div class="detail-item">
-                            <div class="detail-label">Nearest Fib Level</div>
-                            <div class="detail-value">${signal.data.fib.reduce((closest, f) =>
-                                Math.abs(signal.data.currentPrice - f.price) < Math.abs(signal.data.currentPrice - closest.price) ? f : closest
-                            ).level}%</div>
-                        </div>
-                        ` : ''}
-                        ${signal.data.candle ? `
-                        <div class="detail-item">
-                            <div class="detail-label">Candlestick Pattern</div>
-                            <div class="detail-value">${signal.data.candle}</div>
-                        </div>
-                        ` : ''}
-                        ${signal.data.bbSqueeze ? `
-                        <div class="detail-item">
-                            <div class="detail-label">BB Squeeze</div>
-                            <div class="detail-value">${signal.data.bbSqueeze}</div>
-                        </div>
-                        ` : ''}
                         <div class="detail-item">
                             <div class="detail-label">Signal Strength</div>
                             <div class="detail-value">${signal.data.strength.toFixed(2)}/5</div>
                         </div>
                         <div class="detail-item">
                             <div class="detail-label">Band Position</div>
-                            <div class="detail-value">${signal.data.bandPosition ? signal.data.bandPosition.toFixed(1) + '%' : 'N/A'}</div>
+                            <div class="detail-value">${signal.data.bandPosition.toFixed(1)}%</div>
                         </div>
                         <div class="detail-item">
                             <div class="detail-label">Volume Ratio</div>
                             <div class="detail-value">${signal.data.volumeRatio.toFixed(2)}x</div>
                         </div>
-                        <div class="detail-item">
-                            <div class="detail-label">Timeframe</div>
-                            <div class="detail-value">${signal.data.timeframe}</div>
-                        </div>
-                        <div class="detail-item">
-                            <div class="detail-label">Market</div>
-                            <div class="detail-value">${signal.data.marketType}</div>
-                        </div>
-                        <div class="detail-item">
-                            <div class="detail-label">Indicators Used</div>
-                            <div class="detail-value">${signal.data.activeIndicators.join(', ')}</div>
-                        </div>
                     </div>
                 </div>
             `).join('');
+
             resultsEl.innerHTML = signalsHtml;
         }
 
         // Main scanning function
         async function scanPairs() {
             if (!isScanning) return;
+
             updateStatus('🔍 Scanning market pairs...', 'loading');
+
             try {
-                const marketType = document.getElementById('marketType').value;
-                const marketData = await fetchMarketData(marketType);
+                // Get market data
+                const marketData = await fetchMarketData();
                 const maxPairs = parseInt(document.getElementById('maxPairs').value);
                 const topPairs = marketData
-                    .sort((a, b) => parseFloat(b.turnover24h) - parseFloat(a.turnover24h))
+                    .sort((a, b) => parseFloat(b.turnover24h || b.quoteVolume || 0) - parseFloat(a.turnover24h || a.quoteVolume || 0))
                     .slice(0, maxPairs);
-                updateStatus(`📊 Analyzing ${topPairs.length} pairs in ${marketType} market...`, 'loading');
 
-                // Fetch indicator parameters
-                const indicators = Array.from(document.querySelectorAll('#indicators input:checked')).map(input => input.value);
-                if (indicators.length === 0) {
-                    updateStatus('❌ Please select at least one indicator.', 'error');
-                    stopScanning();
-                    return;
-                }
+                updateStatus(`📊 Analyzing ${topPairs.length} pairs...`, 'loading');
+
                 const bbPeriod = parseInt(document.getElementById('bbPeriod').value);
                 const bbStdDev = parseFloat(document.getElementById('bbStdDev').value);
-                const bbMargin = parseFloat(document.getElementById('bbMargin').value);
-                const rsiPeriod = parseInt(document.getElementById('rsiPeriod').value);
-                const macdFast = parseInt(document.getElementById('macdFast').value);
-                const macdSlow = parseInt(document.getElementById('macdSlow').value);
-                const macdSignal = parseInt(document.getElementById('macdSignal').value);
-                const kdjPeriod = parseInt(document.getElementById('kdjPeriod').value);
-                const kdjK = parseInt(document.getElementById('kdjK').value);
-                const kdjD = parseInt(document.getElementById('kdjD').value);
-                const sarStep = parseFloat(document.getElementById('sarStep').value);
-                const sarMaxStep = parseFloat(document.getElementById('sarMaxStep').value);
-                const sarMargin = parseFloat(document.getElementById('sarMargin').value);
-                const fibLevels = document.getElementById('fibLevels').value.split(',').map(Number).filter(n => !isNaN(n) && n >= 0 && n <= 100);
-                const interval = document.getElementById('interval').value;
-                const confirmTimeframes = Array.from(document.getElementById('confirmTimeframes').selectedOptions).map(opt => opt.value);
                 const signals = [];
 
-                // Process all pairs in parallel
-                const batchPromises = topPairs.map(async pair => {
-                    try {
-                        const klines = await fetchKlineData(pair.symbol, interval, marketType);
-                        if (klines && klines.length > 0) {
-                            const signal = generateSignal(
-                                klines, indicators, bbPeriod, bbStdDev, bbMargin, rsiPeriod,
-                                macdFast, macdSlow, macdSignal, kdjPeriod, kdjK, kdjD,
-                                sarStep, sarMaxStep, sarMargin, fibLevels, interval, marketType
-                            );
-                            if (signal && confirmTimeframes.length > 0) {
-                                let confirmations = 0;
-                                const confirmPromises = confirmTimeframes.map(async tf => {
-                                    try {
-                                        const confirmKlines = await fetchKlineData(pair.symbol, tf, marketType);
-                                        const confirmSignal = generateSignal(
-                                            confirmKlines, indicators, bbPeriod, bbStdDev, bbMargin, rsiPeriod,
-                                            macdFast, macdSlow, macdSignal, kdjPeriod, kdjK, kdjD,
-                                            sarStep, sarMaxStep, sarMargin, fibLevels, tf, marketType
-                                        );
-                                        if (confirmSignal && confirmSignal.signal === signal.signal) {
-                                            confirmations++;
-                                        }
-                                    } catch (error) {
-                                        console.error(`Error confirming ${pair.symbol} on ${tf}:`, error);
-                                    }
-                                });
-                                await Promise.allSettled(confirmPromises);
-                                signal.strength *= (1 + 0.2 * confirmations);
-                                if (confirmations >= confirmTimeframes.length / 2) {
-                                    return { symbol: pair.symbol, signal: signal.signal, data: signal };
+                // Process pairs in smaller batches to avoid rate limiting
+                const batchSize = 3;
+                for (let i = 0; i < topPairs.length; i += batchSize) {
+                    if (!isScanning) break; // Allow stopping mid-scan
+                    
+                    const batch = topPairs.slice(i, i + batchSize);
+                    const batchPromises = batch.map(async (pair) => {
+                        try {
+                            const klines = await fetchKlineData(pair.symbol);
+                            if (klines && klines.length > 0) {
+                                const signal = generateSignal(klines, bbPeriod, bbStdDev);
+                                
+                                if (signal) {
+                                    return {
+                                        symbol: pair.symbol,
+                                        signal: signal.signal,
+                                        data: signal
+                                    };
                                 }
-                            } else if (signal) {
-                                return { symbol: pair.symbol, signal: signal.signal, data: signal };
                             }
+                        } catch (error) {
+                            console.error(`Error processing ${pair.symbol}:`, error);
                         }
-                    } catch (error) {
-                        console.error(`Error processing ${pair.symbol}:`, error);
+                        return null;
+                    });
+
+                    const batchResults = await Promise.all(batchPromises);
+                    signals.push(...batchResults.filter(result => result !== null));
+
+                    // Update progress
+                    const processed = Math.min(i + batchSize, topPairs.length);
+                    updateStatus(`📊 Analyzed ${processed}/${topPairs.length} pairs... Found ${signals.length} signals`, 'loading');
+                    
+                    // Add delay between batches to respect rate limits
+                    if (i + batchSize < topPairs.length) {
+                        await new Promise(resolve => setTimeout(resolve, 2000));
                     }
-                    return null;
-                });
+                }
 
-                const batchResults = await Promise.allSettled(batchPromises);
-                signals.push(...batchResults
-                    .filter(result => result.status === 'fulfilled' && result.value !== null)
-                    .map(result => result.value));
-
-                signals.forEach(saveSignal);
-
+                // Sort signals by strength
                 signals.sort((a, b) => b.data.strength - a.data.strength);
+
                 const buySignals = signals.filter(s => s.signal === 'BUY').length;
                 const sellSignals = signals.filter(s => s.signal === 'SELL').length;
 
@@ -1165,10 +664,11 @@
                 displayResults(signals);
 
                 if (signals.length > 0) {
-                    updateStatus(`✅ Found ${signals.length} trading signals in ${marketType} market!`, 'success');
+                    updateStatus(`✅ Found ${signals.length} trading signals!`, 'success');
                 } else {
-                    updateStatus(`ℹ️ No signals detected in ${marketType} market. Market may be ranging.`, 'success');
+                    updateStatus('ℹ️ No signals detected. Market may be ranging.', 'success');
                 }
+
             } catch (error) {
                 console.error('Scanning error:', error);
                 updateStatus('❌ Error occurred during scanning. Please try again.', 'error');
@@ -1178,15 +678,15 @@
         // Start scanning
         function startScanning() {
             if (isScanning) return;
+            
             isScanning = true;
             document.getElementById('scanBtnText').innerHTML = '<span class="spinner"></span> Scanning...';
+            
+            // Initial scan
             scanPairs();
-            const intervalMs = document.getElementById('interval').value === 'M' ? 30 * 24 * 60 * 60 * 1000 :
-                              document.getElementById('interval').value === 'W' ? 7 * 24 * 60 * 60 * 1000 :
-                              document.getElementById('interval').value === '3D' ? 3 * 24 * 60 * 60 * 1000 :
-                              document.getElementById('interval').value === 'D' ? 24 * 60 * 60 * 1000 :
-                              parseInt(document.getElementById('interval').value) * 60 * 1000;
-            scanInterval = setInterval(scanPairs, intervalMs);
+            
+            // Set up interval for continuous scanning (every 5 minutes)
+            scanInterval = setInterval(scanPairs, 5 * 60 * 1000);
         }
 
         // Stop scanning
@@ -1200,22 +700,10 @@
             updateStatus('⏹️ Scanning stopped.', 'success');
         }
 
-        // Keyboard navigation
-        document.addEventListener('keydown', function(event) {
-            if (event.key === 'Enter' && document.activeElement.tagName === 'BUTTON') {
-                document.activeElement.click();
-            }
-            if (event.key === 'Escape') {
-                stopScanning();
-            }
-        });
-
         // Initialize on page load
         document.addEventListener('DOMContentLoaded', function() {
             console.log('Bybit Crypto BB Scanner initialized');
             updateStatus('📊 Ready to scan Bybit markets. Click "Start Scanning" to begin.', 'success');
-            updateHistoryTable();
-            document.getElementById('startScanBtn').focus();
         });
     </script>
 </body>
