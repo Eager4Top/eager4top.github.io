@@ -1,4 +1,4 @@
-// BRISK AI: Real-time Indicator-based Signal Kit
+// BRISK AI: Bybit Real-time Indicator-based Signal Kit (AI-powered trading bot)
 let isScanning = false;
 let restPollingInterval = null;
 let signalHistory = JSON.parse(localStorage.getItem('signalHistory')) || [];
@@ -8,37 +8,29 @@ const CACHE_DURATION = 60 * 1000; // Cache market data for 1 minute
 let requestCount = 0;
 const REQUEST_LIMIT = 40; // Max 40 requests per 10s
 const RESET_INTERVAL = 10000; // 10s rate limit reset
-const SCAN_TIMEOUT = 60000; // 60s timeout for stalled scans
 
 // UI Elements
-const startScanBtn = document.getElementById('startScanBtn');
-const stopScanBtn = document.getElementById('stopScanBtn');
+const scanBtn = document.getElementById('startScanBtn');
 const resultsEl = document.getElementById('results');
-const statusTextEl = document.getElementById('statusText');
-const statusBarEl = document.getElementById('status');
+const statusEl = document.getElementById('status');
 
 // Event Listeners
-startScanBtn.addEventListener('click', startScanning);
-stopScanBtn.addEventListener('click', stopScanning);
+scanBtn.addEventListener('click', toggleScanning);
 
-// Update button states
-function updateButtonStates() {
-    startScanBtn.disabled = isScanning;
-    stopScanBtn.disabled = !isScanning;
-}
-
-// Update status bar
-function updateStatus(message, status) {
-    statusTextEl.textContent = message;
-    statusBarEl.className = `status-bar ${status}`;
-    console.log(`BRISK AI: Status - ${message}`);
+// Toggle scanning state
+function toggleScanning() {
+    if (isScanning) {
+        stopScanning();
+    } else {
+        startScanning();
+    }
 }
 
 // Start scanning
 function startScanning() {
     if (isScanning) return;
     isScanning = true;
-    updateButtonStates();
+    updateScanButton('Scanning...', 'scanning');
     updateStatus('BRISK AI: Starting scan...', 'loading');
 
     const marketType = document.getElementById('marketType').value;
@@ -50,32 +42,30 @@ function startScanning() {
         return;
     }
 
-    // Start scan with timeout
-    const scanPromise = scanMarket(marketType, intervals);
-    const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('Scan timed out')), SCAN_TIMEOUT)
-    );
-
-    Promise.race([scanPromise, timeoutPromise])
-        .catch(error => {
-            updateStatus(`BRISK AI: Scan failed - ${error.message}`, 'error');
-            stopScanning();
-        });
-
-    restPollingInterval = setInterval(() => {
-        if (isScanning) scanMarket(marketType, intervals);
-    }, 30000); // Poll every 30s
+    scanMarket(marketType, intervals);
+    restPollingInterval = setInterval(() => scanMarket(marketType, intervals), 30000); // Poll every 30s
 }
 
 // Stop scanning
 function stopScanning() {
     isScanning = false;
-    updateButtonStates();
-    if (restPollingInterval) {
-        clearInterval(restPollingInterval);
-        restPollingInterval = null;
-    }
+    updateScanButton('Start Scanning', 'stopped');
+    if (restPollingInterval) clearInterval(restPollingInterval);
     updateStatus('BRISK AI: Scanning stopped.', 'success');
+}
+
+// Update scan button text and style
+function updateScanButton(text, state) {
+    scanBtn.textContent = text;
+    scanBtn.className = `scan-btn ${state}`;
+    scanBtn.disabled = false;
+}
+
+// Update status message
+function updateStatus(message, status) {
+    statusEl.textContent = message;
+    statusEl.className = `status ${status}`;
+    statusEl.style.display = 'block';
 }
 
 // Render signal card
@@ -158,7 +148,7 @@ async function scanMarket(marketType, intervals) {
 
         let buySignals = 0, sellSignals = 0;
 
-        for (const ticker of tickers.slice(0, 30)) { // Limit to 30 tickers
+        for (const ticker of tickers.slice(0, 30)) { // Limit to 30 tickers to avoid rate limits
             if (!isScanning) break;
             const pair = ticker.symbol;
 
@@ -341,7 +331,6 @@ async function scanMarket(marketType, intervals) {
     } catch (error) {
         updateStatus(`BRISK AI: Scan error: ${error.message}`, 'error');
         console.error('BRISK AI: Scan error:', error);
-        throw error; // Rethrow to trigger timeout handling
     }
 }
 
@@ -358,11 +347,11 @@ async function fetchMarketData(marketType) {
         if (response.data.retCode !== 0) throw new Error(response.data.retMsg);
         const filteredData = response.data.result.list.filter(ticker =>
             ticker.symbol.endsWith('USDT') &&
-            parseFloat(ticker.turnover24h) >= parseFloat(document.getElementById('minVolume').value || 10000)
+            parseFloat(ticker.turnover24h) >= parseFloat(document.getElementById('minVolume').value || 100000)
         );
         marketDataCache = filteredData;
         cacheTimestamp = Date.now();
-        console.log('BRISK AI: Fetched market data:', filteredData.length, ' pairs');
+        console.log('BRISK AI: Fetched market data:', filteredData.length, 'pairs');
         return filteredData;
     } catch (error) {
         if (error.response && error.response.status === 429) {
@@ -381,10 +370,10 @@ async function fetchKlineData(symbol, interval, marketType) {
     try {
         requestCount++;
         const response = await axios.get(`https://api.bybit.com/v5/market/kline?category=${marketType}&symbol=${encodeURIComponent(symbol)}&interval=${interval}&limit=200`, {
-            timeout: 10000
+            timeout: 5000
         });
         if (response.data.retCode !== 0) throw new Error(response.data.retMsg);
-        const klines = response.data.result.list.map(kline => ({
+        const klines = response.data.result.list.map(kline => [
             parseInt(kline[0]),
             parseFloat(kline[1]),
             parseFloat(kline[2]),
@@ -392,9 +381,8 @@ async function fetchKlineData(symbol, interval, marketType) {
             parseFloat(kline[4]),
             parseFloat(kline[5]),
             parseInt(kline[0]) + 3600000
-        ]])).reverse();
-        
-console.log(`BRISK AI: Fetched ${klines.length} klines for ${symbol} on ${interval}`);
+        ]).reverse();
+        console.log(`BRISK AI: Fetched ${klines.length} klines for ${symbol} on ${interval}`);
         return klines;
     } catch (error) {
         if (error.response && error.response.status === 429) {
@@ -428,6 +416,7 @@ function calculateEMA(prices, period) {
 function calculateBB(prices, period, stdDev, marginPercent) {
     if (!prices || prices.length < period || period <= 0) return null;
     const sma = calculateSMA(prices, period);
+    if (!sma) return null;
     const variance = prices.slice(-period).reduce((sum, price) => sum + Math.pow(price - sma, 2), 0) / period;
     const standardDeviation = Math.sqrt(variance);
     const margin = marginPercent / 100;
@@ -444,7 +433,7 @@ function calculateMACD(prices, fastPeriod, slowPeriod, signalPeriod) {
     const slowEMA = calculateEMA(prices.slice(-slowPeriod - signalPeriod), slowPeriod);
     if (!fastEMA || !slowEMA) return null;
     const macd = fastEMA - slowEMA;
-    const signalLine = calculateEMA(prices.slice(-signalPeriod).map((_, i) => 
+    const signalLine = calculateEMA(prices.slice(-signalPeriod).map((_, i) =>
         calculateEMA(prices.slice(-fastPeriod - signalPeriod + i, -signalPeriod + i), fastPeriod) -
         calculateEMA(prices.slice(-slowPeriod - signalPeriod + i, -signalPeriod + i), slowPeriod)
     ), signalPeriod);
@@ -699,7 +688,7 @@ function generateSignal(klines, indicators, bbPeriod, bbStdDev, bbMargin, macdFa
         if (indicators.includes('fib')) {
             const fib = calculateFibonacci(closes.slice(-50), fibLevels);
             if (fib) {
-                const closest = fib.reduce((prev, curr) => Math.abs(curr - currentPrice) < Math.abs(prev - curr) ? curr : prev);
+                const closest = fib.reduce((prev, curr) => Math.abs(curr - currentPrice) < Math.abs(prev - currentPrice) ? curr : prev);
                 if (currentPrice <= closest * 1.01 && currentPrice >= closest * 0.99) {
                     signals.push('BUY');
                     activeIndicators.push('Fibonacci');
@@ -839,5 +828,3 @@ function generateSignal(klines, indicators, bbPeriod, bbStdDev, bbMargin, macdFa
 // Initialize BRISK AI
 console.log('BRISK AI: Initialized at', new Date().toLocaleString());
 renderHistory();
-updateButtonStates();
-updateStatus('BRISK AI: Ready to scan.', 'success');
