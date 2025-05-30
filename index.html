@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1"/>
     <title>Crypto Market Scanner</title>
     <style>
+        /* Original styles unchanged */
         * {
             margin: 0;
             padding: 0;
@@ -303,6 +304,7 @@
                         <option value="xt">XT.com</option>
                         <option value="lbank">LBank</option>
                         <option value="bitget">Bitget</option>
+                        <option value="mexc">MEXC</option> <!-- Added MEXC -->
                     </select>
                 </div>
 
@@ -393,7 +395,7 @@
             updateStatus('error', 'CCXT failed to load. Using demo data.');
         }
 
-        // Technical Indicators
+        // Technical Indicators (unchanged)
         class TechnicalIndicators {
             static calculateRSI(prices, period = 14) {
                 if (prices.length < period + 1) return null;
@@ -454,7 +456,39 @@
             }
         }
 
-        // Exchange API with 300 candles
+        // Rate Limiter for MEXC WebSocket (95 requests/second)
+        class RateLimiter {
+            constructor(rateLimitPerSecond, interval = 1000) {
+                this.rateLimit = rateLimitPerSecond;
+                this.tokens = rateLimitPerSecond;
+                this.lastRefill = Date.now();
+                this.interval = interval;
+            }
+
+            async acquire() {
+                this.refill();
+                if (this.tokens < 1) {
+                    const waitTime = this.interval - (Date.now() - this.lastRefill);
+                    if (waitTime > 0) {
+                        await new Promise(resolve => setTimeout(resolve, waitTime));
+                    }
+                    this.refill();
+                }
+                this.tokens--;
+                return true;
+            }
+
+            refill() {
+                const now = Date.now();
+                const elapsed = now - this.lastRefill;
+                if (elapsed >= this.interval) {
+                    this.tokens = this.rateLimit;
+                    this.lastRefill = now;
+                }
+            }
+        }
+
+        // Exchange API with WebSocket Support for MEXC
         class ExchangeAPI {
             static proxies = ['https://corsproxy.io/?', ''];
             static exchanges = {
@@ -462,8 +496,125 @@
                 bybit: () => new ccxt.bybit({ enableRateLimit: true }),
                 xt: () => new ccxt.xt({ enableRateLimit: true }),
                 lbank: () => new ccxt.lbank({ enableRateLimit: true }),
-                bitget: () => new ccxt.bitget({ enableRateLimit: true })
+                bitget: () => new ccxt.bitget({ enableRateLimit: true }),
+                mexc: () => new ccxt.mexc({ enableRateLimit: true }) // Added MEXC
             };
+
+            static wsConnections = new Map();
+            static klineDataCache = new Map(); // Cache kline data per pair
+            static mexcRateLimiter = new RateLimiter(95, 1000); // 95 requests/second
+            static maxStreamsPerConnection = 30; // MEXC limit
+            static reconnectAttempts = 0;
+            static maxReconnectAttempts = 5;
+            static reconnectInterval = 5000;
+
+            static async initializeWebSocket(exchange, pairs, timeframe, callback) {
+                if (exchange !== 'mexc') return; // WebSocket only for MEXC
+                const mexcWsUrl = 'wss://wbs.mexc.com/ws';
+                let ws = this.wsConnections.get(exchange);
+
+                if (!ws || ws.readyState === WebSocket.CLOSED) {
+                    ws = new WebSocket(mexcWsUrl);
+                    this.wsConnections.set(exchange, ws);
+
+                    ws.onopen = async () => {
+                        console.log(`MEXC WebSocket connected`);
+                        this.reconnectAttempts = 0;
+                        // Subscribe to pairs (max 30 per connection)
+                        const timeframeMap = { '15m': 'Min15', '1h': 'Min60', '4h': 'Hour4', '1d': 'Day1', '1w': 'Week1' };
+                        const wsTimeframe = timeframeMap[timeframe] || 'Min60';
+                        const batchSize = this.maxStreamsPerConnection;
+                        for (let i = 0; i < pairs.length; i += batchSize) {
+                            const batch = pairs.slice(i, i + batchSize);
+                            for (const pair of batch) {
+                                await this.mexcRateLimiter.acquire();
+                                const cleanPair = pair.replace('-PERP', '').replace('USDT', '/USDT');
+                                const symbol = cleanPair.replace('/', '').toUpperCase();
+                                const subscribeMessage = {
+                                    method: 'SUBSCRIBE',
+                                    params: [`spot@public.kline.v3.${symbol}@${wsTimeframe}`],
+                                    id: Date.now()
+                                };
+                                ws.send(JSON.stringify(subscribeMessage));
+                                console.log(`Subscribed to ${symbol}@${wsTimeframe}`);
+                            }
+                        }
+                        // Start periodic ping to keep connection alive
+                        this.startPing(exchange);
+                    };
+
+                    ws.onmessage = (event) => {
+                        const data = JSON.parse(event.data);
+                        if (data.id) {
+                            console.log('Subscription response:', data);
+                        } else if (data.s && data.k) {
+                            const pair = `${data.s}USDT`;
+                            const kline = {
+                                timestamp: data.k.t * 1000,
+                                open: parseFloat(data.k.o),
+                                high: parseFloat(data.k.h),
+                                low: parseFloat(data.k.l),
+                                close: parseFloat(data.k.c),
+                                volume: parseFloat(data.k.v)
+                            };
+                            let cache = this.klineDataCache.get(pair) || [];
+                            cache.push(kline);
+                            // Keep only the last 300 candles
+                            if (cache.length > 300) cache = cache.slice(-300);
+                            this.klineDataCache.set(pair, cache);
+                            callback(pair, cache);
+                        }
+                    };
+
+                    ws.onerror = (error) => {
+                        console.error('MEXC WebSocket error:', error);
+                    };
+
+                    ws.onclose = async (event) => {
+                        console.log('MEXC WebSocket disconnected:', event.code, event.reason);
+                        this.stopPing(exchange);
+                        if (this.reconnectAttempts < this.maxReconnectAttempts) {
+                            this.reconnectAttempts++;
+                            console.log(`Reconnecting in ${this.reconnectInterval / 1000}s (Attempt ${this.reconnectAttempts})`);
+                            await new Promise(resolve => setTimeout(resolve, this.reconnectInterval));
+                            this.initializeWebSocket(exchange, pairs, timeframe, callback);
+                        } else {
+                            console.error('Max reconnect attempts reached. Falling back to REST.');
+                            this.wsConnections.delete(exchange);
+                            this.klineDataCache.clear();
+                            callback(null, null); // Signal fallback
+                        }
+                    };
+                }
+            }
+
+            static startPing(exchange) {
+                const ws = this.wsConnections.get(exchange);
+                if (!ws) return;
+                const pingInterval = setInterval(async () => {
+                    if (ws.readyState === WebSocket.OPEN) {
+                        await this.mexcRateLimiter.acquire();
+                        ws.send(JSON.stringify({ method: 'PING', id: Date.now() }));
+                    }
+                }, 30000); // Ping every 30s
+                this.wsConnections.set(exchange + '_ping', pingInterval);
+            }
+
+            static stopPing(exchange) {
+                const pingInterval = this.wsConnections.get(exchange + '_ping');
+                if (pingInterval) clearInterval(pingInterval);
+                this.wsConnections.delete(exchange + '_ping');
+            }
+
+            static closeWebSocket(exchange) {
+                const ws = this.wsConnections.get(exchange);
+                if (ws && ws.readyState === WebSocket.OPEN) {
+                    ws.close();
+                    this.wsConnections.delete(exchange);
+                    this.stopPing(exchange);
+                    console.log(`Closed WebSocket for ${exchange}`);
+                }
+            }
 
             static async getPairs(exchange, marketType) {
                 if (useFallback) return this.getFallbackPairs(marketType);
@@ -486,7 +637,8 @@
                                 }
                             }
                         }
-                        pairs = pairs.slice(0, 50);
+                        // Limit to 30 pairs for MEXC WebSocket
+                        pairs = pairs.slice(0, exchange === 'mexc' ? this.maxStreamsPerConnection : 50);
                         console.log(`Found ${pairs.length} USDT pairs`);
                         return pairs.length ? pairs : this.getFallbackPairs(marketType);
                     } catch (error) {
@@ -497,6 +649,15 @@
             }
 
             static async getKlineData(exchange, pair, timeframe) {
+                if (exchange === 'mexc' && !useFallback) {
+                    const cachedData = this.klineDataCache.get(pair);
+                    if (cachedData && cachedData.length >= 50) {
+                        console.log(`Using cached WebSocket data for ${pair}: ${cachedData.length} candles`);
+                        return cachedData;
+                    }
+                    // If insufficient WebSocket data, fetch initial data via REST
+                    console.log(`Insufficient WebSocket data for ${pair}, fetching via REST`);
+                }
                 if (useFallback) return this.generateFallbackData(300);
                 console.log(`Fetching 300 candles for ${exchange} - ${pair} - ${timeframe}`);
                 for (const proxy of this.proxies) {
@@ -512,16 +673,15 @@
                         let allCandles = [];
                         let since = undefined;
 
-                        // Paginate to fetch 300 candles
                         while (allCandles.length < targetCandles) {
                             const remaining = targetCandles - allCandles.length;
-                            const limit = Math.min(remaining, 100); // Max 100 per request
+                            const limit = Math.min(remaining, 100);
                             const ohlcv = await ex.fetchOHLCV(cleanPair, mappedTimeframe, since, limit);
                             if (!ohlcv.length) break;
                             allCandles = allCandles.concat(ohlcv);
-                            since = ohlcv[0][0] - (limit * this.timeframeToMs(timeframe)); // Move back in time
-                            if (ohlcv.length < limit) break; // No more data
-                            await new Promise(resolve => setTimeout(resolve, 500)); // Rate limit
+                            since = ohlcv[0][0] - (limit * this.timeframeToMs(timeframe));
+                            if (ohlcv.length < limit) break;
+                            await new Promise(resolve => setTimeout(resolve, 500));
                         }
 
                         const klineData = allCandles.slice(-targetCandles).map(k => ({
@@ -534,6 +694,8 @@
                         }));
 
                         console.log(`Fetched ${klineData.length} candles for ${pair}`);
+                        // Cache REST data for MEXC to merge with WebSocket updates
+                        if (exchange === 'mexc') this.klineDataCache.set(pair, klineData);
                         return klineData.length >= 50 ? klineData : this.generateFallbackData(300);
                     } catch (error) {
                         console.error(`Error fetching kline data with proxy ${proxy || 'direct'}:`, error.message);
@@ -581,7 +743,7 @@
             }
         }
 
-        // Signal Generator
+        // Signal Generator (unchanged)
         class SignalGenerator {
             static generateSignal(klineData, indicators) {
                 const closes = klineData.map(k => k.close);
@@ -679,55 +841,23 @@
                 console.log(`Scanning ${totalPairs} pairs`);
                 updateStatus('scanning', `Found ${totalPairs} pairs. Analyzing...`);
 
-                const batchSize = 3;
-                const batches = [];
-                for (let i = 0; i < pairs.length; i += batchSize) {
-                    batches.push(pairs.slice(i, i + batchSize));
-                }
-
-                for (let batchIndex = 0; batchIndex < batches.length; batchIndex++) {
-                    const batch = batches[batchIndex];
-                    console.log(`Processing batch ${batchIndex + 1}/${batches.length}`);
-                    const batchPromises = batch.map(async pair => {
-                        try {
-                            const klineData = await ExchangeAPI.getKlineData(exchange, pair, timeframe);
-                            if (!klineData || klineData.length < 50) {
-                                console.log(`Insufficient data for ${pair}: ${klineData ? klineData.length : 0} candles`);
-                                return null;
+                // Initialize WebSocket for MEXC
+                if (exchange === 'mexc') {
+                    await new Promise((resolve) => {
+                        ExchangeAPI.initializeWebSocket(exchange, pairs, timeframe, (pair, klineData) => {
+                            if (pair && klineData && klineData.length >= 50) {
+                                processPair(pair, klineData, exchange, marketType, timeframe, signalStrength, indicators);
+                                scannedPairs++;
+                                updateStatus('scanning', `Scanning ${pair} (${scannedPairs}/${totalPairs}) - ${scanResults.length} signals`);
+                            } else if (!pair) {
+                                // WebSocket failed, process all pairs via REST
+                                processAllPairs(pairs, exchange, marketType, timeframe, signalStrength, indicators);
                             }
-                            const analysis = SignalGenerator.generateSignal(klineData, indicators);
-                            const signalResult = SignalGenerator.analyzeSignals(analysis.signals, signalStrength);
-                            scannedPairs++;
-                            updateStatus('scanning', `Scanning ${pair} (${scannedPairs}/${totalPairs}) - ${scanResults.length} signals`);
-                            if (signalResult.signal !== 'neutral') {
-                                return {
-                                    pair,
-                                    exchange,
-                                    marketType: pair.includes('PERP') ? 'futures' : 'spot',
-                                    timeframe,
-                                    signal: signalResult.signal,
-                                    strength: signalResult.strength,
-                                    sources: signalResult.sources,
-                                    currentPrice: analysis.currentPrice,
-                                    indicators: analysis.indicatorValues,
-                                    timestamp: new Date(),
-                                    volume: klineData[klineData.length - 1].volume
-                                };
-                            }
-                            return null;
-                        } catch (error) {
-                            console.error(`Error scanning ${pair}:`, error.message);
-                            scannedPairs++;
-                            return null;
-                        }
+                            if (scannedPairs >= totalPairs) resolve();
+                        });
                     });
-                    const batchResults = await Promise.all(batchPromises);
-                    scanResults.push(...batchResults.filter(result => result));
-                    if (batchResults.some(result => result)) displayResults();
-                    if (batchIndex < batches.length - 1) {
-                        console.log('Pausing 1s');
-                        await new Promise(resolve => setTimeout(resolve, 1000));
-                    }
+                } else {
+                    await processAllPairs(pairs, exchange, marketType, timeframe, signalStrength, indicators);
                 }
 
                 scanResults.sort((a, b) => b.strength - a.strength);
@@ -747,8 +877,69 @@
             } finally {
                 isScanning = false;
                 updateScanButton(true);
+                ExchangeAPI.closeWebSocket(exchange); // Clean up WebSocket
                 console.log('Scan finished');
             }
+        }
+
+        async function processAllPairs(pairs, exchange, marketType, timeframe, signalStrength, indicators) {
+            const batchSize = exchange === 'mexc' ? ExchangeAPI.maxStreamsPerConnection : 3;
+            const batches = [];
+            for (let i = 0; i < pairs.length; i += batchSize) {
+                batches.push(pairs.slice(i, i + batchSize));
+            }
+
+            for (let batchIndex = 0; batchIndex < batches.length; batchIndex++) {
+                const batch = batches[batchIndex];
+                console.log(`Processing batch ${batchIndex + 1}/${batches.length}`);
+                const batchPromises = batch.map(async pair => {
+                    try {
+                        const klineData = await ExchangeAPI.getKlineData(exchange, pair, timeframe);
+                        if (!klineData || klineData.length < 50) {
+                            console.log(`Insufficient data for ${pair}: ${klineData ? klineData.length : 0} candles`);
+                            return null;
+                        }
+                        return processPair(pair, klineData, exchange, marketType, timeframe, signalStrength, indicators);
+                    } catch (error) {
+                        console.error(`Error scanning ${pair}:`, error.message);
+                        return null;
+                    } finally {
+                        scannedPairs++;
+                        updateStatus('scanning', `Scanning ${pair} (${scannedPairs}/${totalPairs}) - ${scanResults.length} signals`);
+                    }
+                });
+                const batchResults = await Promise.all(batchPromises);
+                scanResults.push(...batchResults.filter(result => result));
+                if (batchResults.some(result => result)) displayResults();
+                if (batchIndex < batches.length - 1) {
+                    console.log('Pausing 1s');
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                }
+            }
+        }
+
+        function processPair(pair, klineData, exchange, marketType, timeframe, signalStrength, indicators) {
+            const analysis = SignalGenerator.generateSignal(klineData, indicators);
+            const signalResult = SignalGenerator.analyzeSignals(analysis.signals, signalStrength);
+            if (signalResult.signal !== 'neutral') {
+                const result = {
+                    pair,
+                    exchange,
+                    marketType: pair.includes('PERP') ? 'futures' : 'spot',
+                    timeframe,
+                    signal: signalResult.signal,
+                    strength: signalResult.strength,
+                    sources: signalResult.sources,
+                    currentPrice: analysis.currentPrice,
+                    indicators: analysis.indicatorValues,
+                    timestamp: new Date(),
+                    volume: klineData[klineData.length - 1].volume
+                };
+                scanResults.push(result);
+                displayResults();
+                return result;
+            }
+            return null;
         }
 
         function showLoading() {
