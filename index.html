@@ -304,7 +304,7 @@
                         <option value="xt">XT.com</option>
                         <option value="lbank">LBank</option>
                         <option value="bitget">Bitget</option>
-                        <option value="mexc">MEXC</option> <!-- Added MEXC -->
+                        <option value="mexc">MEXC</option>
                     </select>
                 </div>
 
@@ -334,7 +334,7 @@
                         <option value="weak">Weak (1+ indicators)</option>
                         <option value="moderate" selected>Moderate (2+ indicators)</option>
                         <option value="strong">Strong (3+ indicators)</option>
-                        <option value="very_strong">Very Strong (4 indicators)</option>
+                        <option value="veryStrong">Very Strong (4 indicators)</option>
                     </select>
                 </div>
             </div>
@@ -362,7 +362,7 @@
             </div>
 
             <button class="scan-btn" id="scanBtn" onclick="startScan()">
-                <span id="scanText">🔍 Start Scanning</span>
+                <span id="scanText">Scan Now</span>
             </button>
         </div>
 
@@ -373,29 +373,58 @@
             </div>
             <div id="resultsContainer">
                 <div class="no-results">
-                    Configure your settings and click "Start Scanning" to begin
+                    Configure settings and click "Scan Now" to begin
                 </div>
             </div>
         </div>
     </div>
 
-    <script src="https://unpkg.com/ccxt@4.3.30/dist/ccxt.browser.js" onerror="console.error('Failed to load CCXT library'); useFallbackData();"></script>
+    <script src="https://unpkg.com/ccxt@4.3.30/dist/ccxt.browser.js"></script>
     <script>
-        // Initialize button and handle CCXT failure
+        // Initialize
         let useFallback = false;
         document.addEventListener('DOMContentLoaded', () => {
-            const btn = document.getElementById('scanBtn');
-            btn.disabled = false;
-            console.log('Page loaded, scan button initialized');
+            document.getElementById('scanBtn').disabled = false;
+            console.log('Page initialized');
         });
 
         function useFallbackData() {
             useFallback = true;
-            console.warn('Using fallback data due to CCXT failure');
-            updateStatus('error', 'CCXT failed to load. Using demo data.');
+            console.warn('Using fallback data');
+            updateStatus('Error', 'CCXT failed. Using demo data.');
         }
 
-        // Technical Indicators (unchanged)
+        // Rate Limiter
+        class RateLimiter {
+            constructor(rateLimitPerSecond, interval = 1000) {
+                this.rateLimit = rateLimitPerSecond;
+                this.tokens = rateLimitPerSecond;
+                this.lastRefill = Date.now();
+                this.interval = interval;
+            }
+
+            async acquire() {
+                this.refill();
+                if (this.tokens < 1) {
+                    const waitTime = this.interval - (Date.now() - this.lastRefill);
+                    if (waitTime > 0) await new Promise(resolve => setTimeout(resolve, waitTime));
+                    this.refill();
+                }
+                this.tokens--;
+                return true;
+            }
+
+            refill() {
+                const now = Date.now();
+                const elapsed = now - this.lastRefill;
+                if (elapsed >= this.interval) {
+                    this.tokens = this.rateLimit;
+                    this.lastRefill = now;
+                }
+            }
+        }
+
+        // Technical Indicators
         class TechnicalIndicators {
             static calculateRSI(prices, period = 14) {
                 if (prices.length < period + 1) return null;
@@ -438,12 +467,8 @@
                 const sma = prices.slice(-period).reduce((a, b) => a + b, 0) / period;
                 const variance = prices.slice(-period).reduce((sum, price) => 
                     sum + Math.pow(price - sma, 2), 0) / period;
-                const standardDeviation = Math.sqrt(variance);
-                return {
-                    upper: sma + (standardDeviation * stdDev),
-                    middle: sma,
-                    lower: sma - (standardDeviation * stdDev)
-                };
+                const std = Math.sqrt(variance);
+                return { upper: sma + (std * stdDev), middle: sma, lower: sma - (std * stdDev) };
             }
 
             static calculateSAR(highs, lows, closes, af = 0.02, maxAf = 0.2) {
@@ -456,39 +481,7 @@
             }
         }
 
-        // Rate Limiter for MEXC WebSocket (95 requests/second)
-        class RateLimiter {
-            constructor(rateLimitPerSecond, interval = 1000) {
-                this.rateLimit = rateLimitPerSecond;
-                this.tokens = rateLimitPerSecond;
-                this.lastRefill = Date.now();
-                this.interval = interval;
-            }
-
-            async acquire() {
-                this.refill();
-                if (this.tokens < 1) {
-                    const waitTime = this.interval - (Date.now() - this.lastRefill);
-                    if (waitTime > 0) {
-                        await new Promise(resolve => setTimeout(resolve, waitTime));
-                    }
-                    this.refill();
-                }
-                this.tokens--;
-                return true;
-            }
-
-            refill() {
-                const now = Date.now();
-                const elapsed = now - this.lastRefill;
-                if (elapsed >= this.interval) {
-                    this.tokens = this.rateLimit;
-                    this.lastRefill = now;
-                }
-            }
-        }
-
-        // Exchange API with WebSocket Support for MEXC
+        // Exchange API
         class ExchangeAPI {
             static proxies = ['https://corsproxy.io/?', ''];
             static exchanges = {
@@ -497,59 +490,168 @@
                 xt: () => new ccxt.xt({ enableRateLimit: true }),
                 lbank: () => new ccxt.lbank({ enableRateLimit: true }),
                 bitget: () => new ccxt.bitget({ enableRateLimit: true }),
-                mexc: () => new ccxt.mexc({ enableRateLimit: true }) // Added MEXC
+                mexc: () => new ccxt.mexc({ enableRateLimit: true })
+            };
+
+            static wsConfig = {
+                binance: { url: 'wss://stream.binance.com:9443/ws', rateLimit: 5, maxStreams: 200 },
+                bybit: { url: 'wss://stream.bybit.com/v5/public/spot', rateLimit: 50, maxStreams: 50 },
+                bitget: { url: 'wss://ws.bitget.com/spot/v1/stream', rateLimit: 20, maxStreams: 50 },
+                mexc: { url: 'wss://wbs.mexc.com/ws', rateLimit: 95, maxStreams: 30 },
+                xt: { url: 'wss://stream.xt.com/public', rateLimit: 50, maxStreams: 50 }, // Assumed
+                lbank: { url: 'wss://api.lbank.info/ws/v2', rateLimit: 50, maxStreams: 50 } // Assumed
             };
 
             static wsConnections = new Map();
-            static klineDataCache = new Map(); // Cache kline data per pair
-            static mexcRateLimiter = new RateLimiter(95, 1000); // 95 requests/second
-            static maxStreamsPerConnection = 30; // MEXC limit
-            static reconnectAttempts = 0;
+            static klineDataCache = new Map();
+            static rateLimiters = new Map(Object.entries(this.wsConfig).map(([ex, cfg]) => [ex, new RateLimiter(cfg.rateLimit, 1000)]));
+            static reconnectAttempts = new Map();
             static maxReconnectAttempts = 5;
             static reconnectInterval = 5000;
 
             static async initializeWebSocket(exchange, pairs, timeframe, callback) {
-                if (exchange !== 'mexc') return; // WebSocket only for MEXC
-                const mexcWsUrl = 'wss://wbs.mexc.com/ws';
+                const config = this.wsConfig[exchange];
                 let ws = this.wsConnections.get(exchange);
-
                 if (!ws || ws.readyState === WebSocket.CLOSED) {
-                    ws = new WebSocket(mexcWsUrl);
+                    ws = new WebSocket(config.url);
                     this.wsConnections.set(exchange, ws);
+                    this.reconnectAttempts.set(exchange, 0);
 
                     ws.onopen = async () => {
-                        console.log(`MEXC WebSocket connected`);
-                        this.reconnectAttempts = 0;
-                        // Subscribe to pairs (max 30 per connection)
-                        const timeframeMap = { '15m': 'Min15', '1h': 'Min60', '4h': 'Hour4', '1d': 'Day1', '1w': 'Week1' };
-                        const wsTimeframe = timeframeMap[timeframe] || 'Min60';
-                        const batchSize = this.maxStreamsPerConnection;
+                        console.log(`${exchange} WebSocket connected`);
+                        this.reconnectAttempts.set(exchange, 0);
+                        const batchSize = config.maxStreams;
                         for (let i = 0; i < pairs.length; i += batchSize) {
                             const batch = pairs.slice(i, i + batchSize);
-                            for (const pair of batch) {
-                                await this.mexcRateLimiter.acquire();
-                                const cleanPair = pair.replace('-PERP', '').replace('USDT', '/USDT');
-                                const symbol = cleanPair.replace('/', '').toUpperCase();
-                                const subscribeMessage = {
-                                    method: 'SUBSCRIBE',
-                                    params: [`spot@public.kline.v3.${symbol}@${wsTimeframe}`],
-                                    id: Date.now()
-                                };
-                                ws.send(JSON.stringify(subscribeMessage));
-                                console.log(`Subscribed to ${symbol}@${wsTimeframe}`);
-                            }
+                            await this.subscribeBatch(exchange, batch, timeframe, ws);
                         }
-                        // Start periodic ping to keep connection alive
                         this.startPing(exchange);
                     };
 
                     ws.onmessage = (event) => {
-                        const data = JSON.parse(event.data);
-                        if (data.id) {
-                            console.log('Subscription response:', data);
-                        } else if (data.s && data.k) {
-                            const pair = `${data.s}USDT`;
-                            const kline = {
+                        try {
+                            const data = JSON.parse(event.data);
+                            this.handleWebSocketMessage(exchange, data, callback);
+                        } catch (e) {
+                            console.error(`${exchange} WebSocket message error:`, e);
+                        }
+                    };
+
+                    ws.onerror = (error) => {
+                        console.error(`${exchange} WebSocket error:`, error);
+                    };
+
+                    ws.onclose = async (event) => {
+                        console.log(`${exchange} WebSocket disconnected: ${event.code} ${event.reason}`);
+                        this.stopPing(exchange);
+                        const attempts = (this.reconnectAttempts.get(exchange) || 0) + 1;
+                        this.reconnectAttempts.set(exchange, attempts);
+                        if (attempts <= this.maxReconnectAttempts) {
+                            const delay = this.reconnectInterval * Math.pow(2, attempts - 1);
+                            console.log(`Reconnecting ${exchange} in ${delay / 1000}s (Attempt ${attempts})`);
+                            await new Promise(resolve => setTimeout(resolve, delay));
+                            this.initializeWebSocket(exchange, pairs, timeframe, callback);
+                        } else {
+                            console.error(`${exchange} max reconnect attempts reached. Falling back to REST.`);
+                            this.wsConnections.delete(exchange);
+                            callback(null, null);
+                        }
+                    };
+                }
+            }
+
+            static async subscribeBatch(exchange, pairs, timeframe, ws) {
+                const limiter = this.rateLimiters.get(exchange);
+                const timeframeMap = {
+                    binance: { '15m': '15m', '1h': '1h', '4h': '4h', '1d': '1d', '1w': '1w' },
+                    bybit: { '15m': '15', '1h': '60', '4h': '240', '1d': 'D', '1w': 'W' },
+                    bitget: { '15m': '15min', '1h': '1h', '4h': '4h', '1d': '1day', '1w': '1week' },
+                    mexc: { '15m': 'Min15', '1h': 'Min60', '4h': 'Hour4', '1d': 'Day1', '1w': 'Week1' },
+                    xt: { '15m': '15m', '1h': '1h', '4h': '4h', '1d': '1d', '1w': '1w' }, // Assumed
+                    lbank: { '15m': '15min', '1h': '1hour', '4h': '4hour', '1d': '1day', '1w': '1week' } // Assumed
+                };
+
+                for (const pair of pairs) {
+                    await limiter.acquire();
+                    const cleanPair = pair.replace('-PERP', '').replace('USDT', '/USDT');
+                    const symbol = cleanPair.replace('/', '');
+                    const wsTimeframe = timeframeMap[exchange][timeframe] || '1h';
+                    let message;
+
+                    switch (exchange) {
+                        case 'binance':
+                            message = JSON.stringify({ method: 'SUBSCRIBE', params: [`${symbol.toLowerCase()}@kline_${wsTimeframe}`], id: Date.now() });
+                            break;
+                        case 'bybit':
+                            message = JSON.stringify({ op: 'subscribe', args: [`kline.${wsTimeframe}.${symbol.toUpperCase()}`] });
+                            break;
+                        case 'bitget':
+                            message = JSON.stringify({ op: 'subscribe', args: [{ instType: 'SPOT', channel: `candle${wsTimeframe}`, instId: symbol.toUpperCase() }] });
+                            break;
+                        case 'mexc':
+                            message = JSON.stringify({ method: 'SUBSCRIBE', params: [`spot@public.kline.v3.${symbol.toUpperCase()}@${wsTimeframe}`], id: Date.now() });
+                            break;
+                        case 'xt':
+                            message = JSON.stringify({ method: 'subscribe', params: [`kline_${wsTimeframe}_${symbol.toLowerCase()}`], id: Date.now() });
+                            break;
+                        case 'lbank':
+                            message = JSON.stringify({ action: 'subscribe', subscribe: `kline_${symbol.toLowerCase()}_${wsTimeframe}` });
+                            break;
+                    }
+
+                    if (ws.readyState === WebSocket.OPEN) {
+                        ws.send(message);
+                        console.log(`Subscribed to ${exchange}: ${symbol}@${wsTimeframe}`);
+                    }
+                }
+            }
+
+            static handleWebSocketMessage(exchange, data, callback) {
+                let pair, kline;
+                switch (exchange) {
+                    case 'binance':
+                        if (data.e === 'kline') {
+                            pair = data.s + 'USDT';
+                            kline = {
+                                timestamp: data.k.t,
+                                open: parseFloat(data.k.o),
+                                high: parseFloat(data.k.h),
+                                low: parseFloat(data.k.l),
+                                close: parseFloat(data.k.c),
+                                volume: parseFloat(data.k.v)
+                            };
+                        }
+                        break;
+                    case 'bybit':
+                        if (data.topic && data.topic.startsWith('kline')) {
+                            pair = data.data[0].symbol + 'USDT';
+                            kline = {
+                                timestamp: parseInt(data.data[0].timestamp),
+                                open: parseFloat(data.data[0].open),
+                                high: parseFloat(data.data[0].high),
+                                low: parseFloat(data.data[0].low),
+                                close: parseFloat(data.data[0].close),
+                                volume: parseFloat(data.data[0].volume)
+                            };
+                        }
+                        break;
+                    case 'bitget':
+                        if (data.data && data.arg.channel.startsWith('candle')) {
+                            pair = data.arg.instId + 'USDT';
+                            kline = {
+                                timestamp: parseInt(data.data[0][0]),
+                                open: parseFloat(data.data[0][1]),
+                                high: parseFloat(data.data[0][2]),
+                                low: parseFloat(data.data[0][3]),
+                                close: parseFloat(data.data[0][4]),
+                                volume: parseFloat(data.data[0][5])
+                            };
+                        }
+                        break;
+                    case 'mexc':
+                        if (data.s && data.k) {
+                            pair = data.s + 'USDT';
+                            kline = {
                                 timestamp: data.k.t * 1000,
                                 open: parseFloat(data.k.o),
                                 high: parseFloat(data.k.h),
@@ -557,46 +659,58 @@
                                 close: parseFloat(data.k.c),
                                 volume: parseFloat(data.k.v)
                             };
-                            let cache = this.klineDataCache.get(pair) || [];
-                            cache.push(kline);
-                            // Keep only the last 300 candles
-                            if (cache.length > 300) cache = cache.slice(-300);
-                            this.klineDataCache.set(pair, cache);
-                            callback(pair, cache);
                         }
-                    };
-
-                    ws.onerror = (error) => {
-                        console.error('MEXC WebSocket error:', error);
-                    };
-
-                    ws.onclose = async (event) => {
-                        console.log('MEXC WebSocket disconnected:', event.code, event.reason);
-                        this.stopPing(exchange);
-                        if (this.reconnectAttempts < this.maxReconnectAttempts) {
-                            this.reconnectAttempts++;
-                            console.log(`Reconnecting in ${this.reconnectInterval / 1000}s (Attempt ${this.reconnectAttempts})`);
-                            await new Promise(resolve => setTimeout(resolve, this.reconnectInterval));
-                            this.initializeWebSocket(exchange, pairs, timeframe, callback);
-                        } else {
-                            console.error('Max reconnect attempts reached. Falling back to REST.');
-                            this.wsConnections.delete(exchange);
-                            this.klineDataCache.clear();
-                            callback(null, null); // Signal fallback
+                        break;
+                    case 'xt':
+                        if (data.topic && data.topic.startsWith('kline')) {
+                            pair = data.symbol.toUpperCase() + 'USDT';
+                            kline = {
+                                timestamp: data.data.t,
+                                open: parseFloat(data.data.o),
+                                high: parseFloat(data.data.h),
+                                low: parseFloat(data.data.l),
+                                close: parseFloat(data.data.c),
+                                volume: parseFloat(data.data.v)
+                            };
                         }
-                    };
+                        break;
+                    case 'lbank':
+                        if (data.kline) {
+                            pair = data.pair.replace('_', '').toUpperCase() + 'USDT';
+                            kline = {
+                                timestamp: data.kline.ts,
+                                open: parseFloat(data.kline.o),
+                                high: parseFloat(data.kline.h),
+                                low: parseFloat(data.kline.l),
+                                close: parseFloat(data.kline.c),
+                                volume: parseFloat(data.kline.v)
+                            };
+                        }
+                        break;
+                }
+
+                if (pair && kline) {
+                    let cache = this.klineDataCache.get(pair) || [];
+                    cache.push(kline);
+                    if (cache.length > 300) cache = cache.slice(-300);
+                    this.klineDataCache.set(pair, cache);
+                    callback(pair, cache);
                 }
             }
 
             static startPing(exchange) {
                 const ws = this.wsConnections.get(exchange);
                 if (!ws) return;
+                const limiter = this.rateLimiters.get(exchange);
                 const pingInterval = setInterval(async () => {
                     if (ws.readyState === WebSocket.OPEN) {
-                        await this.mexcRateLimiter.acquire();
-                        ws.send(JSON.stringify({ method: 'PING', id: Date.now() }));
+                        await limiter.acquire();
+                        const message = exchange === 'bybit' ? JSON.stringify({ op: 'ping' }) :
+                                        exchange === 'bitget' ? JSON.stringify({ op: 'ping' }) :
+                                        JSON.stringify({ method: 'PING', id: Date.now() });
+                        ws.send(message);
                     }
-                }, 30000); // Ping every 30s
+                }, 30000);
                 this.wsConnections.set(exchange + '_ping', pingInterval);
             }
 
@@ -618,15 +732,11 @@
 
             static async getPairs(exchange, marketType) {
                 if (useFallback) return this.getFallbackPairs(marketType);
-                console.log(`Fetching pairs for ${exchange}, marketType: ${marketType}`);
                 for (const proxy of this.proxies) {
                     try {
                         const ex = this.exchanges[exchange]();
-                        if (!ex) throw new Error(`Exchange ${exchange} not supported`);
-                        if (proxy) ex.options['corsProxy'] = proxy;
                         await ex.loadMarkets();
                         const markets = ex.markets;
-                        console.log(`Loaded ${Object.keys(markets).length} markets`);
                         let pairs = [];
                         for (const [symbol, market] of Object.entries(markets)) {
                             if (market.active && symbol.endsWith('/USDT')) {
@@ -637,70 +747,69 @@
                                 }
                             }
                         }
-                        // Limit to 30 pairs for MEXC WebSocket
-                        pairs = pairs.slice(0, exchange === 'mexc' ? this.maxStreamsPerConnection : 50);
-                        console.log(`Found ${pairs.length} USDT pairs`);
+                        // Sort by volume (if available) and limit
+                        pairs = await this.sortPairsByVolume(ex, pairs);
+                        pairs = pairs.slice(0, this.wsConfig[exchange].maxStreams);
                         return pairs.length ? pairs : this.getFallbackPairs(marketType);
                     } catch (error) {
-                        console.error(`Error fetching pairs with proxy ${proxy || 'direct'}:`, error.message);
+                        console.error(`Error fetching pairs: ${error.message}`);
                         if (!proxy) return this.getFallbackPairs(marketType);
                     }
                 }
             }
 
+            static async sortPairsByVolume(exchange, pairs) {
+                try {
+                    const tickers = await exchange.fetchTickers(pairs.map(p => p.replace('-PERP', '/USDT')));
+                    return pairs.sort((a, b) => {
+                        const volA = tickers[a.replace('-PERP', '/USDT')]?.quoteVolume || 0;
+                        const volB = tickers[b.replace('-PERP', '/USDT')]?.quoteVolume || 0;
+                        return volB - volA;
+                    });
+                } catch (e) {
+                    console.warn('Volume sorting failed, using default order:', e.message);
+                    return pairs;
+                }
+            }
+
             static async getKlineData(exchange, pair, timeframe) {
-                if (exchange === 'mexc' && !useFallback) {
-                    const cachedData = this.klineDataCache.get(pair);
-                    if (cachedData && cachedData.length >= 50) {
-                        console.log(`Using cached WebSocket data for ${pair}: ${cachedData.length} candles`);
-                        return cachedData;
-                    }
-                    // If insufficient WebSocket data, fetch initial data via REST
-                    console.log(`Insufficient WebSocket data for ${pair}, fetching via REST`);
+                const cachedData = this.klineDataCache.get(pair);
+                if (cachedData && cachedData.length >= 50 && !useFallback) {
+                    return cachedData;
                 }
                 if (useFallback) return this.generateFallbackData(300);
-                console.log(`Fetching 300 candles for ${exchange} - ${pair} - ${timeframe}`);
-                for (const proxy of this.proxies) {
-                    try {
-                        const ex = this.exchanges[exchange]();
-                        if (!ex) throw new Error(`Exchange ${exchange} not supported`);
-                        if (proxy) ex.options['corsProxy'] = proxy;
+                try {
+                    const ex = this.exchanges[exchange]();
+                    const timeframeMap = { '15m': '15m', '1h': '1h', '4h': '4h', '1d': '1d', '1w': '1w' };
+                    const cleanPair = pair.replace('-PERP', '/USDT');
+                    let allCandles = [];
+                    let since = undefined;
+                    const targetCandles = 300;
 
-                        const timeframeMap = { '15m': '15m', '1h': '1h', '4h': '4h', '1d': '1d', '1w': '1w' };
-                        const mappedTimeframe = timeframeMap[timeframe] || '1h';
-                        const cleanPair = pair.replace('-PERP', '/USDT');
-                        const targetCandles = 300;
-                        let allCandles = [];
-                        let since = undefined;
-
-                        while (allCandles.length < targetCandles) {
-                            const remaining = targetCandles - allCandles.length;
-                            const limit = Math.min(remaining, 100);
-                            const ohlcv = await ex.fetchOHLCV(cleanPair, mappedTimeframe, since, limit);
-                            if (!ohlcv.length) break;
-                            allCandles = allCandles.concat(ohlcv);
-                            since = ohlcv[0][0] - (limit * this.timeframeToMs(timeframe));
-                            if (ohlcv.length < limit) break;
-                            await new Promise(resolve => setTimeout(resolve, 500));
-                        }
-
-                        const klineData = allCandles.slice(-targetCandles).map(k => ({
-                            timestamp: k[0],
-                            open: k[1],
-                            high: k[2],
-                            low: k[3],
-                            close: k[4],
-                            volume: k[5]
-                        }));
-
-                        console.log(`Fetched ${klineData.length} candles for ${pair}`);
-                        // Cache REST data for MEXC to merge with WebSocket updates
-                        if (exchange === 'mexc') this.klineDataCache.set(pair, klineData);
-                        return klineData.length >= 50 ? klineData : this.generateFallbackData(300);
-                    } catch (error) {
-                        console.error(`Error fetching kline data with proxy ${proxy || 'direct'}:`, error.message);
-                        if (!proxy) return this.generateFallbackData(300);
+                    while (allCandles.length < targetCandles) {
+                        const limit = Math.min(targetCandles - allCandles.length, 100);
+                        const ohlcv = await ex.fetchOHLCV(cleanPair, timeframeMap[timeframe], since, limit);
+                        if (!ohlcv.length) break;
+                        allCandles = allCandles.concat(ohlcv);
+                        since = ohlcv[0][0] - (limit * this.timeframeToMs(timeframe));
+                        if (ohlcv.length < limit) break;
+                        await new Promise(resolve => setTimeout(resolve, 500));
                     }
+
+                    const klineData = allCandles.slice(-targetCandles).map(k => ({
+                        timestamp: k[0],
+                        open: k[1],
+                        high: k[2],
+                        low: k[3],
+                        close: k[4],
+                        volume: k[5]
+                    }));
+
+                    this.klineDataCache.set(pair, klineData);
+                    return klineData.length >= 50 ? klineData : this.generateFallbackData(300);
+                } catch (error) {
+                    console.error(`Error fetching kline data: ${error.message}`);
+                    return this.generateFallbackData(300);
                 }
             }
 
@@ -743,7 +852,7 @@
             }
         }
 
-        // Signal Generator (unchanged)
+        // Signal Generator
         class SignalGenerator {
             static generateSignal(klineData, indicators) {
                 const closes = klineData.map(k => k.close);
@@ -785,7 +894,7 @@
                 const sellSignals = signals.filter(s => s.type === 'sell');
                 const buyStrength = buySignals.reduce((sum, s) => sum + s.strength, 0);
                 const sellStrength = sellSignals.reduce((sum, s) => sum + s.strength, 0);
-                const strengthThreshold = { weak: 1, moderate: 2, strong: 3, very_strong: 4 };
+                const strengthThreshold = { weak: 1, moderate: 2, strong: 3, veryStrong: 4 };
                 const threshold = strengthThreshold[minStrength] || 2;
                 if (buyStrength >= threshold && buyStrength > sellStrength) {
                     return { signal: 'buy', strength: buyStrength, sources: buySignals.map(s => s.source) };
@@ -796,21 +905,20 @@
             }
         }
 
-        // Main Scanner Logic
+        // Scanner Logic
         let isScanning = false;
         let scanResults = [];
         let totalPairs = 0;
         let scannedPairs = 0;
+        const signalCache = new Map();
 
         async function startScan() {
-            console.log('startScan triggered');
-            if (isScanning) {
-                console.log('Scan in progress');
-                return;
-            }
+            if (isScanning) return;
             isScanning = true;
-            updateStatus('scanning', 'Initializing scan...');
+            updateStatus('scanning', 'Initializing...');
             updateScanButton(false);
+            scanResults = [];
+            signalCache.clear();
 
             try {
                 const exchange = document.getElementById('exchange').value;
@@ -823,42 +931,36 @@
                     bb: document.getElementById('bb').checked,
                     sar: document.getElementById('sar').checked
                 };
-                console.log('Scan parameters:', { exchange, marketType, timeframe, signalStrength, indicators });
 
                 if (!Object.values(indicators).some(Boolean)) {
-                    alert('Select at least one indicator!');
-                    throw new Error('No indicators selected');
+                    throw new Error('Select at least one indicator');
                 }
 
                 showLoading();
-                updateStatus('scanning', 'Fetching USDT pairs...');
+                updateStatus('scanning', 'Fetching pairs...');
                 const pairs = await ExchangeAPI.getPairs(exchange, marketType);
                 if (!pairs.length) throw new Error('No trading pairs found');
 
                 totalPairs = pairs.length;
                 scannedPairs = 0;
-                scanResults = [];
-                console.log(`Scanning ${totalPairs} pairs`);
                 updateStatus('scanning', `Found ${totalPairs} pairs. Analyzing...`);
 
-                // Initialize WebSocket for MEXC
-                if (exchange === 'mexc') {
-                    await new Promise((resolve) => {
-                        ExchangeAPI.initializeWebSocket(exchange, pairs, timeframe, (pair, klineData) => {
-                            if (pair && klineData && klineData.length >= 50) {
-                                processPair(pair, klineData, exchange, marketType, timeframe, signalStrength, indicators);
-                                scannedPairs++;
-                                updateStatus('scanning', `Scanning ${pair} (${scannedPairs}/${totalPairs}) - ${scanResults.length} signals`);
-                            } else if (!pair) {
-                                // WebSocket failed, process all pairs via REST
-                                processAllPairs(pairs, exchange, marketType, timeframe, signalStrength, indicators);
-                            }
-                            if (scannedPairs >= totalPairs) resolve();
-                        });
+                await new Promise((resolve) => {
+                    ExchangeAPI.initializeWebSocket(exchange, pairs, timeframe, (pair, klineData) => {
+                        if (pair && klineData && klineData.length >= 50) {
+                            processPair(pair, klineData, exchange, marketType, timeframe, signalStrength, indicators);
+                            scannedPairs++;
+                            updateStatus('scanning', `Scanning ${pair} (${scannedPairs}/${totalPairs}) - ${scanResults.length} signals`);
+                        } else if (!pair) {
+                            processAllPairs(pairs, exchange, marketType, timeframe, signalStrength, indicators).then(resolve);
+                            return;
+                        }
+                        if (scannedPairs >= totalPairs) {
+                            // Keep WebSocket open for real-time updates
+                            setTimeout(resolve, 30000); // Allow 30s for more updates
+                        }
                     });
-                } else {
-                    await processAllPairs(pairs, exchange, marketType, timeframe, signalStrength, indicators);
-                }
+                });
 
                 scanResults.sort((a, b) => b.strength - a.strength);
                 displayResults();
@@ -871,34 +973,28 @@
                     <div class="no-results">
                         <h3>Scan Failed</h3>
                         <p>Error: ${error.message}</p>
-                        <p>For live data, use a backend server (see console for setup).</p>
                     </div>
                 `;
             } finally {
                 isScanning = false;
                 updateScanButton(true);
-                ExchangeAPI.closeWebSocket(exchange); // Clean up WebSocket
+                // Keep WebSocket open for real-time updates
                 console.log('Scan finished');
             }
         }
 
         async function processAllPairs(pairs, exchange, marketType, timeframe, signalStrength, indicators) {
-            const batchSize = exchange === 'mexc' ? ExchangeAPI.maxStreamsPerConnection : 3;
+            const batchSize = ExchangeAPI.wsConfig[exchange].maxStreams;
             const batches = [];
             for (let i = 0; i < pairs.length; i += batchSize) {
                 batches.push(pairs.slice(i, i + batchSize));
             }
 
-            for (let batchIndex = 0; batchIndex < batches.length; batchIndex++) {
-                const batch = batches[batchIndex];
-                console.log(`Processing batch ${batchIndex + 1}/${batches.length}`);
+            for (const batch of batches) {
                 const batchPromises = batch.map(async pair => {
                     try {
                         const klineData = await ExchangeAPI.getKlineData(exchange, pair, timeframe);
-                        if (!klineData || klineData.length < 50) {
-                            console.log(`Insufficient data for ${pair}: ${klineData ? klineData.length : 0} candles`);
-                            return null;
-                        }
+                        if (!klineData || klineData.length < 50) return null;
                         return processPair(pair, klineData, exchange, marketType, timeframe, signalStrength, indicators);
                     } catch (error) {
                         console.error(`Error scanning ${pair}:`, error.message);
@@ -909,12 +1005,9 @@
                     }
                 });
                 const batchResults = await Promise.all(batchPromises);
-                scanResults.push(...batchResults.filter(result => result));
-                if (batchResults.some(result => result)) displayResults();
-                if (batchIndex < batches.length - 1) {
-                    console.log('Pausing 1s');
-                    await new Promise(resolve => setTimeout(resolve, 1000));
-                }
+                scanResults.push(...batchResults.filter(r => r));
+                if (batchResults.some(r => r)) displayResults();
+                await new Promise(resolve => setTimeout(resolve, 1000));
             }
         }
 
@@ -922,6 +1015,9 @@
             const analysis = SignalGenerator.generateSignal(klineData, indicators);
             const signalResult = SignalGenerator.analyzeSignals(analysis.signals, signalStrength);
             if (signalResult.signal !== 'neutral') {
+                const signalKey = `${pair}_${signalResult.signal}_${signalResult.strength}`;
+                if (signalCache.has(signalKey)) return null; // Avoid duplicates
+                signalCache.set(signalKey, true);
                 const result = {
                     pair,
                     exchange,
@@ -936,7 +1032,6 @@
                     volume: klineData[klineData.length - 1].volume
                 };
                 scanResults.push(result);
-                displayResults();
                 return result;
             }
             return null;
@@ -954,11 +1049,7 @@
         function displayResults() {
             const container = document.getElementById('resultsContainer');
             if (!scanResults.length) {
-                container.innerHTML = `
-                    <div class="no-results">
-                        No signals found. Try adjusting signal strength or timeframe.
-                    </div>
-                `;
+                container.innerHTML = `<div class="no-results">No signals found. Adjust settings.</div>`;
                 return;
             }
             const resultsHTML = scanResults.map(result => `
@@ -972,9 +1063,7 @@
                                 <span class="exchange-badge">${result.timeframe}</span>
                             </div>
                         </div>
-                        <div class="signal-badge ${result.signal}">
-                            ${result.signal.toUpperCase()}
-                        </div>
+                        <div class="signal-badge ${result.signal}">${result.signal.toUpperCase()}</div>
                     </div>
                     <div class="signal-details">
                         <div class="indicator-group">
@@ -982,23 +1071,20 @@
                             <div class="indicator-value">
                                 Current: $${result.currentPrice.toFixed(6)}<br>
                                 Strength: ${result.strength}/4<br>
-                                Volume: ${result.volume ? result.volume.toLocaleString() : 'N/A'}<br>
+                                Volume: ${result.volume.toLocaleString()}<br>
                                 Time: ${result.timestamp.toLocaleString()}
                             </div>
                         </div>
                         <div class="indicator-group">
                             <h4>Signal Sources</h4>
-                            <div class="indicator-value">
-                                ${result.sources.join('<br>')}
-                            </div>
+                            <div class="indicator-value">${result.sources.join('<br>')}</div>
                         </div>
                         ${result.indicators.rsi ? `
                             <div class="indicator-group">
                                 <h4>RSI</h4>
                                 <div class="indicator-value">
                                     Value: ${result.indicators.rsi.toFixed(2)}<br>
-                                    Status: ${result.indicators.rsi < 30 ? 'Oversold' : 
-                                             result.indicators.rsi > 70 ? 'Overbought' : 'Neutral'}
+                                    Status: ${result.indicators.rsi < 30 ? 'Oversold' : result.indicators.rsi > 70 ? 'Overbought' : 'Neutral'}
                                 </div>
                             </div>
                         ` : ''}
@@ -1022,15 +1108,14 @@
         function updateStatus(type, message) {
             const statusEl = document.getElementById('status');
             statusEl.textContent = message;
-            statusEl.className = `status ${type}`;
+            statusEl.className = `status ${type.toLowerCase()}`;
         }
 
         function updateScanButton(enabled) {
             const btn = document.getElementById('scanBtn');
             const text = document.getElementById('scanText');
             btn.disabled = !enabled;
-            text.textContent = enabled ? '🔍 Start Scanning' : '⏳ Scanning...';
-            console.log(`Button ${enabled ? 'enabled' : 'disabled'}`);
+            text.textContent = enabled ? 'Scan Now' : 'Scanning...';
         }
     </script>
 </body>
