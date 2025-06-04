@@ -3,60 +3,58 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="BRISK AI: Advanced multi-exchange cryptocurrency trading signals generator for spot and futures markets">
-    <meta name="keywords" content="cryptocurrency, trading signals, BRISK AI, technical indicators">
-    <meta name="author" content="BRISK AI Team">
-    <title>BRISK AI - Trading Signals</title>
-    <!-- Favicon -->
-    <link rel="icon" type="image/x-icon" href="favicon.ico">
-    <!-- Web App Manifest for PWA -->
-    <link rel="manifest" href="manifest.json">
-    <!-- External CSS -->
-    <link rel="stylesheet" href="styles.css">
+    <title>BRISK AI</>
 </head>
 <body>
     <div class="container">
-        <header class="header" role="banner">
-            <h1>🚀 BRISK AI</h1>
-            <p>Advanced & Customizable Multi-Exchange, Multi-Technical Indicator and Multi-Quote Currency Real-Time Cryptocurrency Trading Signals Generator for Spot and Futures Markets.</p>
-        </header>
+        <div class="header" role="banner">
+            <h1>🚀 BRISK AI </h1>
+            <p>
+                
+                 Advanced & Customizable Multi-Exchange, Multi-Technical Indicator and Multi-Quote Currency Real Time Cryptocurrency Trading Signals Generator for Spot and Futures Markets. 
+                
+            </p>
+        </div>
 
-        <section class="controls" role="region" aria-label="Scanner controls">
+        <div class="controls" role="region" aria-label="Scanner controls">
             <div id="wsStatus" class="ws-status disconnected" role="alert">
                 WebSocket: Disconnected
             </div>
-            <form id="scannerForm" class="controls-grid">
+            <div class="controls-grid">
                 <div class="control-group">
-                    <label for="minVolume">Min 24h Volume (USDT)</label>
-                    <input type="number" id="minVolume" value="100000" min="0" aria-describedby="minVolumeDesc" required>
-                    <small id="minVolumeDesc" class="sr-only">Minimum 24-hour trading volume in USDT</small>
-                </div>
 
-                <div class="control-group">
-                    <label for="marketType">Market Type</label>
-                    <select id="marketType" multiple aria-describedby="marketTypeDesc">
-                        <option value="spot" selected>Spot</option>
-                        <option value="linear">Futures</option>
-                    </select>
-                    <small class="sr-only" id="marketTypeDesc">Select one or more markets (Ctrl/Cmd for multiple)</small>
-                </div>
+        <div class="control-group">
+                <label for="minVolume">Min 24h Volume (USDT)</label>
+                <input type="number" id="minVolume" value="100000" min="0" aria-describedby="minVolumeDesc">
+                <small id="minVolumeDesc" class="sr-only">Minimum 24-hour trading volume in USDT</small>
+            </div>
+            
+            <div class="control-group">
+                <label for="marketType">Market Type</label>
+                <select id="marketType" multiple aria-describedby="marketTypeDesc">
+                    <option value="spot" selected>Spot</option>
+                    <option value="linear">Futures</option>
+                </select>
+                <small class="sr-only" id="marketTypeDesc">Select one or more Market to use for signal generation (hold Ctrl/Cmd to select multiple)</small>
+            </div>
 
-                <div class="control-group">
-                    <label for="exchanges">Select Exchanges</label>
-                    <select id="exchanges" multiple aria-describedby="exchangesDesc">
-                        <option value="Binance" selected>Binance</option>
-                        <option value="Bitget" selected>Bitget</option>
-                        <option value="Bybit" selected>Bybit</option>
-                        <option value="Kucoin" selected>Kucoin</option>
-                        <option value="Lbank" selected>Lbank</option>
-                        <option value="Mexc" selected>MEXC</option>
-                        <option value="Xt" selected>XT</option>
-                    </select>
-                    <small class="sr-only" id="exchangesDesc">Select one or more exchanges (Ctrl/Cmd for multiple)</small>
-                </div>
 
-                <div class="control-group">
-                    <label for="indicators">Select Indicators</label>
+               <div class="control-group">
+                   <label for="exchanges">Select Exchanges</label>
+                        <select id="exchanges" multiple aria-describedby="exchangesDesc">
+                            <option value="Binance" selected>Binance </option>
+                            <option value="Bitget" selected>Bitget</option>
+                            <option value="Bybit" selected>Bybit</option>
+                            <option value="Kucoin" selected>Kucoin</option>
+                            <option value="Lbank" selected>Lbank</option>
+                            <option value="Mexc" selected>MEXC</option>
+                            <option value="Xt" selected>XT</option>
+                        </select>
+                        <small class="sr-only" id="exchangesDesc">Select one or more exchanges to use for signal generation (hold Ctrl/Cmd to select multiple)</small>
+                    </div>
+
+
+                    <label for="indicators"> Select Indicators </label>
                     <select id="indicators" multiple aria-describedby="indicatorsDesc">
                         <option value="bb" selected>Bollinger Bands</option>
                         <option value="rsi" selected>RSI</option>
@@ -70,118 +68,490 @@
                         <option value="donchian" selected>Donchian Channels</option>
                         <option value="stochastic" selected>Stochastic</option>
                         <option value="supertrend" selected>Supertrend</option>
-                        <option value="ema" selected>EMA</option>
-                        <option value="ma" selected>MA</option>
+                        <option value="ema" selected>EMA </option>
+                        <option value="ma" selected>MA </option>
                         <option value="adx" selected>ADX</option>
-                        <option value="stochrsi" selected>StochRSI</option>
-                        <option value="pumpDump" selected>Pump & Dump</option>
-                    </select>
-                    <small class="sr-only" id="indicatorsDesc">Select one or more indicators (Ctrl/Cmd for multiple)</small>
-                </div>
+                        <option value="stochrsi" selected>StochRSI </option>
+                        <option value="rsi" selected>RSI </option>
+                    </option>
+                    <option value="Pump & Dump" selected>Pump & Dump </option>
 
-                <div class="control-group">
-                    <label for="signals">Select Signals</label>
-                    <select id="signals" multiple aria-describedby="signalsDesc">
-                        <!-- Condensed for brevity; include all signals as in your original file -->
-                        <option value="Fibonacci Support" selected>Fibonacci Support</option>
-                        <option value="Fibonacci Resistance" selected>Fibonacci Resistance</option>
-                        <!-- Add other signals here -->
-                    </select>
-                    <small class="sr-only" id="signalsDesc">Select one or more signals (Ctrl/Cmd for multiple)</small>
-                </div>
+                </select>
+                <small class="sr-only" id="indicatorsDesc">Select one or more indicators to use for signal generation (hold Ctrl/Cmd to select multiple)</small>
+            </div>
 
-                <div class="control-group">
-                    <label for="quoteCurrency">Select Quote Currency</label>
+
+            <div class="control-group">
+                <label for="signals">Select Signals </label>
+                <select id="signals" multiple aria-describedby="signalsDesc">
+                    <option value="Fibonacci Support" selected> Fibonacci Support </option>
+                    <option value="Fibonacci Resistance" selected>Fibonacci Resistance</option>
+                    <option value="EMA9 Crossed Above EMA21" selected> EMA9 Crossed Above EMA21</option>
+                    <option value="EMA9 Crossed Below EMA21" selected> EMA9 Crossed Below EMA21</option>
+                    <option value="ADX Bullish Continuation" selected> ADX Bullish Continuation </option>
+                    <option value="ADX Bearish Continuation" selected>ADX Bearish Continuation</option>
+                    <option value="Channel Breakout Bullish" selected>Channel Breakout Bullish</option>
+                    <option value="Channel Breakout Bearish" selected>Channel Breakout Bearish</option>
+                    <option value="Hammer" selected>Hammer</option>
+                    <option value="Shooting Star" selected>Shooting Star</option>
+                    <option value="Doji Bullish" selected>Doji Bullish</option>
+                    <option value="Doji Bearish" selected>Doji Bearish</option>
+                    <option value="RSI14 Oversold" selected>RSI14 Oversold</option>
+                    <option value="RSI14 Overbought" selected>RSI14 Overbought</option>
+                    <option value="Price Crossed Above SMA50" selected>Price Crossed Above SMA50</option>
+                    <option value="Price Crossed Below SMA50" selected>Price Crossed Below SMA50</option>
+                    <option value="MACD Bullish Crossover" selected> MACD Bullish Crossover </option>
+                    <option value="MACD Bearish Crossover" selected> MACD Bearish Crossover</option>
+                    <option value="BB Lower Band Breach" selected> BB Lower Band Breach</option>
+                    <option value="BB Upper Band Breach" selected> BB Upper Band Breach </option>
+                    <option value="Price Near BB Middle" selected> Price Near BB Middle </option>
+                    <option value="SAR Bullish" selected> SAR Bullish</option>
+                    <option value="SAR Bearish" selected> SAR Bearish</option>
+                    <option value="Ichimoku Bullish Breakout" selected> Ichimoku Bullish Breakout</option>
+                    <option value="Ichimoku Bearish Breakout" selected> Ichimoku Bearish Breakout</option>
+                    <option value="StochRSI Oversold" selected> StochRSI Oversold</option>
+                    <option value="StochRSI Overbought" selected> StochRSI Overbought</option>
+                    <option value="Pump Detected" selected> Pump Detected</option>
+                    <option value="Dump Detected" selected> Dump Detected</option>
+                </select>
+                <small class="sr-only" id="signalsDesc">Select one or more signals to use for signal generation (hold Ctrl/Cmd to select multiple)</small>
+            </div>
+
+
+        <div class="control-group">
+                  <label for="quoteCurrency">Select Quote Currency</label>
                     <select id="quoteCurrency" multiple aria-describedby="quoteCurrencyDesc">
-                        <option value="BNB" selected>BNB</option>
-                        <option value="BTC" selected>BTC</option>
- 																		  <option 
-value="ETH" selected>ETH</option>
-                        <option value="EUR" selected>EUR</option>
-                        <option value="USDT" selected>USDT</option>
-                    </select>
-                    <small class="sr-only" id="quoteCurrencyDesc">Select one or more quote currencies (Ctrl/Cmd for multiple)</small>
-                </div>
+                    <option value="BNB" selected> BNB </option>
+                    <option value="BTC" selected> BTC</option>
+                    <option value="EUR" selected> EUR</option>
+                     <option value="USDT" selected> USDT</option>
+                    
+                     </select>
+                    <small class="sr-only" id="quoteCurrencyDesc">Select one or more quote Currency to use for signal generation (hold Ctrl/Cmd to select multiple)</small>
+                    </div>
 
-                <div class="control-group">
-                    <label for="orderTypes">Select Order Type</label>
-                    <select id="orderTypes" multiple aria-describedby="orderTypesDesc">
-                        <option value="Long" selected>Long</option>
-                        <option value="Short" selected>Short</option>
-                        <option value="Watch" selected>Watch</option>
-                    </select>
-                    <small class="sr-only" id="orderTypesDesc">Select one or more order types (Ctrl/Cmd for multiple)</small>
-                </div>
 
-                <div class="control-group">
-                    <label for="trend">Select Trend</label>
+
+
+                    <div class="control-group">
+                        <label for="orderTypes">Select Order Type</label>
+                        <select id="orderTypes" multiple aria-describedby="orderTypesDesc">
+                    <option value="Long" selected> Long </option>
+                    <option value="Short" selected>Short</option>
+                    <option value="Watch" selected>Watch</option>
+                     </select>
+                    <small class="sr-only" id="orderTypesDesc">Select one or more Order Types to use for signal generation (hold Ctrl/Cmd to select multiple)</small>
+                    </div>
+
+
+                 <div class="control-group">
+                    <label for="trend">Select Trend </label>
                     <select id="trend" multiple aria-describedby="trendDesc">
-                        <option value="Bullish" selected>Bullish</option>
-                        <option value="Bearish" selected>Bearish</option>
-                        <option value="Consolidation" selected>Consolidation</option>
-                    </select>
-                    <small class="sr-only" id="trendDesc">Select one or more trends (Ctrl/Cmd for multiple)</small>
-                </div>
+                    <option value="Bullish" selected> Bullish </option>
+                    <option value="Bearish" selected> Bearish </option>
+                    <option value="consolidation" selected>Consolidation</option>
+                     </select>
+                    <small class="sr-only" id="trendDesc">Select one or more Trend to use for signal generation (hold Ctrl/Cmd to select multiple)</small>
+                    </div>
 
-                <div class="control-group">
-                    <label for="fibLevels">Fibonacci Levels (%)</label>
-                    <select id="fibLevels" multiple aria-describedby="fibLevelsDesc">
-                        <option value="23.6" selected>23.6</option>
-                        <option value="38.2" selected>38.2</option>
-                        <option value="50" selected>50</option>
-                        <option value="61.8" selected>61.8</option>
-                        <option value="78.6" selected>78.6</option>
-                    </select>
-                    <small class="sr-only" id="fibLevelsDesc">Select one or more Fibonacci levels (Ctrl/Cmd for multiple)</small>
-                </div>
 
-                <div class="control-group">
-                    <label for="intervals">Timeframes</label>
-                    <select id="intervals" multiple aria-describedby="intervalsDesc">
-                        <option value="15">15m</option>
-                        <option value="60" selected>1h</option>
-                        <option value="240">4h</option>
-                        <option value="360">6h</option>
-                        <option value="480">8h</option>
-                        <option value="720">12h</option>
-                        <option value="D">1d</option>
-                        <option value="3D">3d</option>
-                        <option value="W">1w</option>
-                        <option value="M">1M</option>
-                    </select>
-                    <small class="sr-only" id="intervalsDesc">Select one or more timeframes (Ctrl/Cmd for multiple)</small>
-                </div>
 
-                <!-- Indicator Parameters (Condensed for brevity; include all from original file) -->
+
+            <div class="control-group">
+                <label for="fibLevels">Fibonacci Levels (%)</label>
+                <select id="fibLevels" multiple aria-describedby="fibLevelsDesc">
+                    <option value="23.6" selected>23.6</option>
+                    <option value="38.2" selected>38.2</option>
+                    <option value="50" selected>50</option>
+                    <option value="61.8" selected>61.8</option>
+                    <option value="78.6" selected>78.6</option>
+                </select>
+                <small id="fibLevelsDesc" class="sr-only">Select one or more Fibonacci retracement levels (hold Ctrl/Cmd to select multiple)</small>
+            </div>
+            <div class="control-group">
+                <label for="candlePatterns">Candlestick Patterns</label>
+                <select id="candlePatterns" multiple aria-describedby="candlePatternsDesc">
+                    <option value="Doji" selected>Doji</option>
+                    <option value="Hammer" selected>Hammer</option>
+                    <option value="Hanging Man" selected>Hanging Man</option>
+                    <option value="Bullish Engulfing" selected>Bullish Engulfing</option>
+                    <option value="Bearish Engulfing" selected>Bearish Engulfing</option>
+                    <option value="Morning Star" selected>Morning Star</option>
+                    <option value="Evening Star" selected>Evening Star</option>
+                </select>
+                <small id="candlePatternsDesc" class="sr-only">Select one or more candlestick patterns to detect (hold Ctrl/Cmd to select multiple)</small>
+            </div>
+            
                 <div class="control-group">
-                    <details>
-                        <summary>Bollinger Bands Parameters</summary>
-                        <div class="indicator-controls">
-                            <div class="control-group">
-                                <label for="bbPeriod">BB Period</label>
-                                <input type="number" id="bbPeriod" value="20" min="5" max="50" aria-describedby="bbPeriodDesc">
-                                <small id="bbPeriodDesc" class="sr-only">Bollinger Bands lookback period (5 to 50)</small>
-                            </div>
-                            <!-- Add other BB parameters -->
+                <label for="intervals">Timeframes</label>
+                <select id="intervals" multiple aria-describedby="intervalsDesc">
+                    <option value="15">15m</option>
+                    <option value="60" selected>1h</option>
+                    <option value="240">4h</option>
+                    <option value="360">6h</option>
+                    <option value="480">8h</option>
+                    <option value="720">12h</option>
+                    <option value="D">1d</option>
+                    <option value="3D">3d</option>
+                    <option value="W">1w</option>
+                    <option value="M">1M</option>
+                </select>
+                <small id="intervalsDesc" class="sr-only">Select one or more timeframes for scanning (hold Ctrl/Cmd to select multiple)</small>
+            </div>
+            
+            
+            <div class="control-group">
+                <label for="confirmTimeframes">Confirm Timeframes</label>
+                <select id="confirmTimeframes" multiple aria-describedby="confirmTimeframesDesc">
+                    <option value="15">15m</option>
+                    <option value="60">1h</option>
+                    <option value="240">4h</option>
+                    <option value="360">6h</option>
+                    <option value="480">8h</option>
+                    <option value="720">12h</option>
+                    <option value="D">1d</option>
+                    <option value="3D">3d</option>
+                    <option value="W">1w</option>
+                    <option value="M">1M</option>
+                </select>
+                <small id="confirmTimeframesDesc" class="sr-only">Select additional timeframes for signal confirmation (hold Ctrl/Cmd to select multiple)</small>
+            </div>
+            
+            
+            
+            <div class="control-group">
+                <details>
+                    <summary>Bollinger Bands Parameters</summary>
+                    <div class="indicator-controls">
+                        <div class="control-group">
+                            <label for="bbPeriod">BB Period</label>
+                            <input type="number" id="bbPeriod" value="20" min="5" max="50" aria-describedby="bbPeriodDesc">
+                            <small id="bbPeriodDesc" class="sr-only">Bollinger Bands lookback period (5 to 50)</small>
                         </div>
-                    </details>
-                </div>
+                        <div class="control-group">
+                            <label for="bbStdDev">BB Std Deviation</label>
+                            <input type="number" id="bbStdDev" value="2" min="1" max="3" step="0.1" aria-describedby="bbStdDevDesc">
+                            <small id="bbStdDevDesc" class="sr-only">Standard deviation multiplier for Bollinger Bands (1 to 3)</small>
+                        </div>
+                        <div class="control-group">
+                            <label for="bbMargin">BB Margin (%)</label>
+                            <input type="number" id="bbMargin" value="0.2" min="0" max="5" step="0.1" aria-describedby="bbMarginDesc">
+                            <small id="bbMarginDesc" class="sr-only">Percentage margin around Bollinger Bands (0 to 5%)</small>
+                        </div>
+                    </div>
+                </details>
+            </div>
+            <div class="control-group">
+                <details>
+                    <summary>RSI Parameters</summary>
+                    <div class="indicator-controls">
+                        <div class="control-group">
+                            <label for="rsiPeriod">RSI Period</label>
+                            <input type="number" id="rsiPeriod" value="14" min="5" max="30" aria-describedby="rsiPeriodDesc">
+                            <small id="rsiPeriodDesc" class="sr-only">RSI lookback period (5 to 30)</small>
+                        </div>
+                    </div>
+                </details>
+            </div>
+            <div class="control-group">
+                <details>
+                    <summary>MACD Parameters</summary>
+                    <div class="indicator-controls">
+                        <div class="control-group">
+                            <label for="macdFast">MACD Fast Period</label>
+                            <input type="number" id="macdFast" value="12" min="5" max="20" aria-describedby="macdFastDesc">
+                            <small id="macdFastDesc" class="sr-only">MACD fast EMA period (5 to 20)</small>
+                        </div>
+                        <div class="control-group">
+                            <label for="macdSlow">MACD Slow Period</label>
+                            <input type="number" id="macdSlow" value="26" min="10" max="50" aria-describedby="macdSlowDesc">
+                            <small id="macdSlowDesc" class="sr-only">MACD slow EMA period (10 to 50)</small>
+                        </div>
+                        <div class="control-group">
+                            <label for="macdSignal">MACD Signal Period</label>
+                            <input type="number" id="macdSignal" value="9" min="5" max="20" aria-describedby="macdSignalDesc">
+                            <small id="macdSignalDesc" class="sr-only">MACD signal line period (5 to 20)</small>
+                        </div>
+                    </div>
+                </details>
+            </div>
+            <div class="control-group">
+                <details>
+                    <summary>KDJ Parameters</summary>
+                    <div class="indicator-controls">
+                        <div class="control-group">
+                            <label for="kdjPeriod">KDJ Period</label>
+                            <input type="number" id="kdjPeriod" value="9" min="5" max="20" aria-describedby="kdjPeriodDesc">
+                            <small id="kdjPeriodDesc" class="sr-only">KDJ lookback period (5 to 20)</small>
+                        </div>
+                        <div class="control-group">
+                            <label for="kdjK">KDJ K</label>
+                            <input type="number" id="kdjK" value="3" min="1" max="10" aria-describedby="kdjKDesc">
+                            <small id="kdjKDesc" class="sr-only">KDJ K smoothing period (1 to 10)</small>
+                        </div>
+                        <div class="control-group">
+                            <label for="kdjD">KDJ D</label>
+                            <input type="number" id="kdjD" value="3" min="1" max="10" aria-describedby="kdjDDesc">
+                            <small id="kdjDDesc" class="sr-only">KDJ D smoothing period (1 to 10)</small>
+                        </div>
+                    </div>
+                </details>
+            </div>
+            <div class="control-group">
+                <details>
+                    <summary>SAR Parameters</summary>
+                    <div class="indicator-controls">
+                        <div class="control-group">
+                            <label for="sarStep">SAR Step</label>
+                            <input type="number" id="sarStep" value="0.02" min="0.01" max="0.1" step="0.01" aria-describedby="sarStepDesc">
+                            <small id="sarStepDesc" class="sr-only">Parabolic SAR step (0.01 to 0.1)</small>
+                        </div>
+                        <div class="control-group">
+                            <label for="sarMaxStep">SAR Max Step</label>
+                            <input type="number" id="sarMaxStep" value="0.2" min="0.1" max="0.5" step="0.01" aria-describedby="sarMaxStepDesc">
+                            <small id="sarMaxStepDesc" class="sr-only">Parabolic SAR max step (0.1 to 0.5)</small>
+                        </div>
+                        <div class="control-group">
+                            <label for="sarMargin">SAR Margin (%)</label>
+                            <input type="number" id="sarMargin" value="0.5" min="0" max="5" step="0.1" aria-describedby="sarMarginDesc">
+                            <small id="sarMarginDesc" class="sr-only">Percentage margin around SAR (0 to 5%)</small>
+                        </div>
+                    </div>
+                </details>
+            </div>
+            <div class="control-group">
+                <details>
+                    <summary>Ichimoku Cloud Parameters</summary>
+                    <div class="indicator-controls">
+                        <div class="control-group">
+                            <label for="ichimokuTenkan">Tenkan-sen Period</label>
+                            <input type="number" id="ichimokuTenkan" value="9" min="5" max="20" aria-describedby="ichimokuTenkanDesc">
+                            <small id="ichimokuTenkanDesc" class="sr-only">Tenkan-sen period (5 to 20)</small>
+                        </div>
+                        <div class="control-group">
+                            <label for="ichimokuKijun">Kijun-sen Period</label>
+                            <input type="number" id="ichimokuKijun" value="26" min="10" max="50" aria-describedby="ichimokuKijunDesc">
+                            <small id="ichimokuKijunDesc" class="sr-only">Kijun-sen period (10 to 50)</small>
+                        </div>
+                        <div class="control-group">
+                            <label for="ichimokuSenkouB">Senkou Span B Period</label>
+                            <input type="number" id="ichimokuSenkouB" value="52" min="20" max="100" aria-describedby="ichimokuSenkouBDesc">
+                            <small id="ichimokuSenkouBDesc" class="sr-only">Senkou Span B period (20 to 100)</small>
+                        </div>
+                    </div>
+                </details>
+            </div>
+            <div class="control-group">
+                <details>
+                    <summary>Donchian Channels Parameters</summary>
+                    <div class="indicator-controls">
+                        <div class="control-group">
+                            <label for="donchianPeriod">Period</label>
+                            <input type="number" id="donchianPeriod" value="20" min="5" max="50" aria-describedby="donchianPeriodDesc">
+                            <small id="donchianPeriodDesc" class="sr-only">Donchian Channels lookback period (5 to 50)</small>
+                        </div>
+                    </div>
+                </details>
+            </div>
+            <div class="control-group">
+                <details>
+                    <summary>Stochastic Parameters</summary>
+                    <div class="indicator-controls">
+                        <div class="control-group">
+                            <label for="stochKPeriod">K Period</label>
+                            <input type="number" id="stochKPeriod" value="14" min="5" max="20" aria-describedby="stochKPeriodDesc">
+                            <small id="stochKPeriodDesc" class="sr-only">Stochastic K period (5 to 20)</small>
+                        </div>
+                        <div class="control-group">
+                            <label for="stochDPeriod">D Period</label>
+                            <input type="number" id="stochDPeriod" value="3" min="1" max="10" aria-describedby="stochDPeriodDesc">
+                            <small id="stochDPeriodDesc" class="sr-only">Stochastic D smoothing period (1 to 10)</small>
+                        </div>
+                        <div class="control-group">
+                            <label for="stochSmooth">Smooth</label>
+                            <input type="number" id="stochSmooth" value="3" min="1" max="10" aria-describedby="stochSmoothDesc">
+                            <small id="stochSmoothDesc" class="sr-only">Stochastic smoothing period (1 to 10)</small>
+                        </div>
+                    </div>
+                </details>
+            </div>
+            <div class="control-group">
+                <details>
+                    <summary>Supertrend Parameters</summary>
+                    <div class="indicator-controls">
+                        <div class="control-group">
+                            <label for="supertrendPeriod">ATR Period</label>
+                            <input type="number" id="supertrendPeriod" value="10" min="5" max="20" aria-describedby="supertrendPeriodDesc">
+                            <small id="supertrendPeriodDesc" class="sr-only">Supertrend ATR period (5 to 20)</small>
+                        </div>
+                        <div class="control-group">
+                            <label for="supertrendMultiplier">Multiplier</label>
+                            <input type="number" id="supertrendMultiplier" value="3" min="1" max="5" step="0.5" aria-describedby="supertrendMultiplierDesc">
+                            <small id="supertrendMultiplierDesc" class="sr-only">Supertrend multiplier (1 to 5)</small>
+                        </div>
+                    </div>
+                </details>
+            </div>
+            <div class="control-group">
+                <details>
+                    <summary>EMA Periods</summary>
+                    <div class="indicator-controls">
+                        <div class="control-group">
+                            <label for="ema1">EMA 1 Period</label>
+                            <input type="number" id="ema1" value="5" min="3" max="100" aria-describedby="ema1Desc">
+                            <small id="ema1Desc" class="sr-only">EMA 1 period (3 to 100)</small>
+                        </div>
+                        <div class="control-group">
+                            <label for="ema2">EMA 2 Period</label>
+                            <input type="number" id="ema2" value="10" min="3" max="100" aria-describedby="ema2Desc">
+                            <small id="ema2Desc" class="sr-only">EMA 2 period (3 to 100)</small>
+                        </div>
+                        <div class="control-group">
+                            <label for="ema3">EMA 3 Period</label>
+                            <input type="number" id="ema3" value="20" min="3" max="100" aria-describedby="ema3Desc">
+                            <small id="ema3Desc" class="sr-only">EMA 3 period (3 to 100)</small>
+                        </div>
+                        <div class="control-group">
+                            <label for="ema4">EMA 4 Period</label>
+                            <input type="number" id="ema4" value="50" min="3" max="100" aria-describedby="ema4Desc">
+                            <small id="ema4Desc" class="sr-only">EMA 4 period (3 to 100)</small>
+                        </div>
+                        <div class="control-group">
+                            <label for="ema5">EMA 5 Period</label>
+                            <input type="number" id="ema5" value="100" min="3" max="100" aria-describedby="ema5Desc">
+                            <small id="ema5Desc" class="sr-only">EMA 5 period (3 to 100)</small>
+                        </div>
+                    </div>
+                </details>
+            </div>
+            <div class="control-group">
+                <details>
+                    <summary>MA Periods</summary>
+                    <div class="indicator-controls">
+                        <div class="control-group">
+                            <label for="ma1">MA 1 Period</label>
+                            <input type="number" id="ma1" value="5" min="3" max="100" aria-describedby="ma1Desc">
+                            <small id="ma1Desc" class="sr-only">MA 1 period (3 to 100)</small>
+                        </div>
+                        <div class="control-group">
+                            <label for="ma2">MA 2 Period</label>
+                            <input type="number" id="ma2" value="10" min="3" max="100" aria-describedby="ma2Desc">
+                            <small id="ma2Desc" class="sr-only">MA 2 period (3 to 100)</small>
+                        </div>
+                        <div class="control-group">
+                            <label for="ma3">MA 3 Period</label>
+                            <input type="number" id="ma3" value="20" min="3" max="100" aria-describedby="ma3Desc">
+                            <small id="ma3Desc" class="sr-only">MA 3 period (3 to 100)</small>
+                        </div>
+                        <div class="control-group">
+                            <label for="ma4">MA 4 Period</label>
+                            <input type="number" id="ma4" value="50" min="3" max="100" aria-describedby="ma4Desc">
+                            <small id="ma4Desc" class="sr-only">MA 4 period (3 to 100)</small>
+                        </div>
+                        <div class="control-group">
+                            <label for="ma5">MA 5 Period</label>
+                            <input type="number" id="ma5" value="100" min="3" max="100" aria-describedby="ma5Desc">
+                            <small id="ma5Desc" class="sr-only">MA 5 period (3 to 100)</small>
+                        </div>
+                    </div>
+                </details>
+            </div>
+            <div class="control-group">
+                <details>
+                    <summary>ADX Parameters</summary>
+                    <div class="indicator-controls">
+                        <div class="control-group">
+                            <label for="adxPeriod">ADX Period</label>
+                            <input type="number" id="adxPeriod" value="14" min="5" max="30" aria-describedby="adxPeriodDesc">
+                            <small id="adxPeriodDesc" class="sr-only">ADX lookback period (5 to 30)</small>
+                        </div>
+                    </div>
+                </details>
+            </div>
+            <div class="control-group">
+                <details>
+                    <summary>StochRSI Periods</summary>
+                    <div class="indicator-controls">
+                        <div class="control-group">
+                            <label for="stochrsi1">StochRSI 1 Period</label>
+                            <input type="number" id="stochrsi1" value="14" min="5" max="30" aria-describedby="stochrsi1Desc">
+                            <small id="stochrsi1Desc" class="sr-only">StochRSI 1 period (5 to 30)</small>
+                        </div>
+                        <div class="control-group">
+                            <label for="stochrsi2">StochRSI 2 Period</label>
+                            <input type="number" id="stochrsi2" value="14" min="5" max="30" aria-describedby="stochrsi2Desc">
+                            <small id="stochrsi2Desc" class="sr-only">StochRSI 2 period (5 to 30)</small>
+                        </div>
+                        <div class="control-group">
+                            <label for="stochrsi3">StochRSI 3 Period</label>
+                            <input type="number" id="stochrsi3" value="14" min="5" max="30" aria-describedby="stochrsi3Desc">
+                            <small id="stochrsi3Desc" class="sr-only">StochRSI 3 period (5 to 30)</small>
+                        </div>
+                        <div class="control-group">
+                            <label for="stochrsi4">StochRSI 4 Period</label>
+                            <input type="number" id="stochrsi4" value="14" min="5" max="30" aria-describedby="stochrsi4Desc">
+                            <small id="stochrsi4Desc" class="sr-only">StochRSI 4 period (5 to 30)</small>
+                        </div>
+                        <div class="control-group">
+                            <label for="stochrsi5">StochRSI 5 Period</label>
+                            <input type="number" id="stochrsi5" value="14" min="5" max="30" aria-describedby="stochrsi5Desc">
+                            <small id="stochrsi5Desc" class="sr-only">StochRSI 5 period (5 to 30)</small>
+                        </div>
+                    </div>
+                </details>
+            </div>
+            <div class="control-group">
+                <details>
+                    <summary>RSI Periods</summary>
+                    <div class="indicator-controls">
+                        <div class="control-group">
+                            <label for="rsi5x1">RSI 1 Period</label>
+                            <input type="number" id="rsi5x1" value="5" min="3" max="30" aria-describedby="rsi5x1Desc">
+                            <small id="rsi5x1Desc" class="sr-only">RSI 1 period (3 to 30)</small>
+                        </div>
+                        <div class="control-group">
+                            <label for="rsi5x2">RSI 2 Period</label>
+                            <input type="number" id="rsi5x2" value="7" min="3" max="30" aria-describedby="rsi5x2Desc">
+                            <small id="rsi5x2Desc" class="sr-only">RSI 2 period (3 to 30)</small>
+                        </div>
+                        <div class="control-group">
+                            <label for="rsi5x3">RSI 3 Period</label>
+                            <input type="number" id="rsi5x3" value="9" min="3" max="30" aria-describedby="rsi5x3Desc">
+                            <small id="rsi5x3Desc" class="sr-only">RSI 3 period (3 to 30)</small>
+                        </div>
+                        <div class="control-group">
+                            <label for="rsi5x4">RSI 4 Period</label>
+                            <input type="number" id="rsi5x4" value="11" min="3" max="30" aria-describedby="rsi5x4Desc">
+                            <small id="rsi5x4Desc" class="sr-only">RSI 4 period (3 to 30)</small>
+                        </div>
+                        <div class="control-group">
+                            <label for="rsi5x5">RSI 5 Period</label>
+                            <input type="number" id="rsi5x5" value="13" min="3" max="30" aria-describedby="rsi5x5Desc">
+                            <small id="rsi5x5Desc" class="sr-only">RSI 5 period (3 to 30)</small>
+                        </div>
+                    </div>
+                </details>
+            </div>
+  
+  
+        <button class="scan-btn" id="scanBtn">
+                <span id="scanText">Scan Now</span>
+            </button>
+        </div>
 
-                <button type="submit" class="scan-btn" id="scanBtn">
-                    <span id="scanText">Scan Now</span>
-                </button>
-            </form>
-        </section>
-
-        <section class="results" role="region" aria-label="Trading signals">
+        <div class="results">
             <div class="results-header">
                 <h2>Trading Signals</h2>
-                <div class="status" id="status">Ready to scan</div>
+                <div class="status" id="status">
+                    Ready to scan
+                </div>
             </div>
-            <div id="resultsContainer" class="signals-grid">
-                <div class="no-results">Configure settings and click "Scan Now" to begin</div>
+            <div id="resultsContainer">
+                <div class="no-results">
+                    Configure settings and click "Scan Now" to begin
+                </div>
             </div>
-        </section>
+        </div>
     </div>
 
     <!-- External JavaScript -->
