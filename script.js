@@ -7,7 +7,7 @@ const resultsContainer = document.getElementById('resultsContainer');
 const scannerForm = document.getElementById('scannerForm');
 
 function connectWebSocket() {
-  const wsUrl = `wss://${process.env.RENDER_EXTERNAL_HOSTNAME || 'localhost'}/ws`;
+  const wsUrl = 'wss://brisk-1qsf.onrender.com/ws';
   ws = new WebSocket(wsUrl);
 
   ws.onopen = () => {
