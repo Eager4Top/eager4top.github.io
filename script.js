@@ -8,105 +8,126 @@ const resultsContainer = document.getElementById('resultsContainer');
 const scannerForm = document.getElementById('scannerForm');
 
 function connectWebSocket() {
-    ws = new WebSocket('wss://your-backend.com/ws'); // Replace with your backend WebSocket URL
+  const wsUrl = `wss://${process.env.RENDER_EXTERNAL_HOSTNAME || 'localhost:3000'}/ws`;
+  ws = new WebSocket(wsUrl);
 
-    ws.onopen = () => {
-        wsStatus.textContent = 'WebSocket: Connected';
-        wsStatus.className = 'ws-status connected';
-    };
+  ws.onopen = () => {
+    wsStatus.textContent = 'WebSocket: Connected';
+    wsStatus.className = 'ws-status connected';
+    scanBtn.disabled = false;
+    console.log('WebSocket connected to', wsUrl);
+  };
 
-    ws.onmessage = (event) => {
-        const data = JSON.parse(event.data);
-        if (data.type === 'signal') {
-            renderSignals(data.signals);
-            status.textContent = 'Scan Complete';
-            status.className = 'status complete';
-        } else if (data.type === 'error') {
-            status.textContent = `Error: ${data.message}`;
-            status.className = 'status error';
-        }
-    };
-
-    ws.onclose = () => {
-        wsStatus.textContent = 'WebSocket: Disconnected';
-        wsStatus.className = 'ws-status disconnected';
-        setTimeout(connectWebSocket, 5000); // Reconnect after 5 seconds
-    };
-
-    ws.onerror = (error) => {
-        console.error('WebSocket error:', error);
-        wsStatus.textContent = 'WebSocket: Error';
-        wsStatus.className = 'ws-status error';
-    };
-}
-
-function renderSignals(signals) {
-    resultsContainer.innerHTML = '';
-    if (signals.length === 0) {
-        resultsContainer.innerHTML = '<div class="no-results">No signals found</div>';
-        return;
-    }
-
-    signals.forEach(signal => {
-        const signalCard = document.createElement('div');
-        signalCard.className = `signal-card ${signal.type.toLowerCase()}`;
-        signalCard.innerHTML = `
-            <div class="signal-header">
-                <span class="pair-name">${signal.pair}</span>
-                <span class="signal-badge ${signal.type.toLowerCase()}">${signal.type}</span>
-            </div>
-            <div class="signal-details">
-                <div class="detail-item">
-                    <span class="detail-label">Exchange</span>
-                    <span class="detail-value">${signal.exchange}</span>
-                </div>
-                <div class="detail-item">
-                    <span class="detail-label">Price</span>
-                    <span class="detail-value">${signal.price}</span>
-                </div>
-                <div class="detail-item">
-                    <span class="detail-label">Timeframe</span>
-                    <span class="detail-value">${signal.timeframe}</span>
-                </div>
-            </div>
-        `;
-        resultsContainer.appendChild(signalCard);
-    });
-}
-
-scannerForm.addEventListener('submit', (e) => {
-    e.preventDefault();
-    scanText.textContent = 'Scanning...';
-    scanBtn.disabled = true;
-    status.textContent = 'Scanning...';
-    status.className = 'status scanning';
-
-    const formData = {
-        minVolume: document.getElementById('minVolume').value,
-        marketType: Array.from(document.getElementById('marketType').selectedOptions).map(opt => opt.value),
-        exchanges: Array.from(document.getElementById('exchanges').selectedOptions).map(opt => opt.value),
-        indicators: Array.from(document.getElementById('indicators').selectedOptions).map(opt => opt.value),
-        signals: Array.from(document.getElementById('signals').selectedOptions).map(opt => opt.value),
-        quoteCurrency: Array.from(document.getElementById('quoteCurrency').selectedOptions).map(opt => opt.value),
-        orderTypes: Array.from(document.getElementById('orderTypes').selectedOptions).map(opt => opt.value),
-        trend: Array.from(document.getElementById('trend').selectedOptions).map(opt => opt.value),
-        fibLevels: Array.from(document.getElementById('fibLevels').selectedOptions).map(opt => opt.value),
-        intervals: Array.from(document.getElementById('intervals').selectedOptions).map(opt => opt.value),
-        // Add other parameters as needed
-    };
-
-    if (ws && ws.readyState === WebSocket.OPEN) {
-        ws.send(JSON.stringify({ type: 'scan', data: formData }));
-    } else {
-        status.textContent = 'Error: WebSocket not connected';
+  ws.onmessage = (event) => {
+    try {
+      const data = JSON.parse(event.data);
+      if (data.type === 'signal') {
+        renderSignals(data.signals);
+        status.textContent = 'Scan Complete';
+        status.className = 'status complete';
+        scanText.textContent = 'Scan Now';
+        scanBtn.disabled = false;
+      } else if (data.type === 'error') {
+        status.textContent = `Error: ${data.message}`;
         status.className = 'status error';
         scanText.textContent = 'Scan Now';
         scanBtn.disabled = false;
+      }
+    } catch (error) {
+      console.error('WebSocket message error:', error);
+      status.textContent = 'Error: Invalid response from server';
+      status.className = 'status error';
+      scanText.textContent = 'Scan Now';
+      scanBtn.disabled = false;
     }
+  };
+
+  ws.onclose = () => {
+    wsStatus.textContent = 'WebSocket: Disconnected';
+    wsStatus.className = 'ws-status disconnected';
+    scanBtn.disabled = true;
+    console.log('WebSocket disconnected, reconnecting in 5s...');
+    setTimeout(connectWebSocket, 5000); // Reconnect after 5 seconds
+  };
+
+  ws.onerror = (error) => {
+    console.error('WebSocket error:', error);
+    wsStatus.textContent = 'WebSocket: Error';
+    wsStatus.className = 'ws-status error';
+    scanBtn.disabled = true;
+  };
+}
+
+function renderSignals(signals) {
+  resultsContainer.innerHTML = '';
+  if (!signals || signals.length === 0) {
+    resultsContainer.innerHTML = '<div class="no-results">No signals found</div>';
+    return;
+  }
+
+  signals.forEach((signal) => {
+    const signalCard = document.createElement('div');
+    signalCard.className = `signal-card ${signal.type.toLowerCase()}`;
+sth     signalCard.innerHTML = `
+      <div class="signal-header">
+        <span class="pair-name">${signal.pair}</span>
+        <span class="signal-badge ${signal.type.toLowerCase()}">${signal.type}</span>
+      </div>
+      <div class="signal-details">
+        <div class="detail-item">
+          <span class="detail-label">Exchange</span>
+          <span class="detail-value">${signal.exchange}</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Price</span>
+          <span class="detail-value">${signal.price}</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Timeframe</span>
+          <span class="detail-value">${signal.timeframe}</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Indicators</span>
+          <span class="detail-value">${signal.indicators?.join(', ') || 'N/A'}</span>
+        </div>
+      </div>
+    `;
+    resultsContainer.appendChild(signalCard);
+  });
+}
+
+scannerForm.addEventListener('submit', (e) => {
+  e.preventDefault();
+  if (!ws || ws.readyState !== WebSocket.OPEN) {
+    status.textContent = 'Error: WebSocket not connected';
+    status.className = 'status error';
+    return;
+  }
+
+  scanText.textContent = 'Scanning...';
+  scanBtn.disabled = true;
+  status.textContent = 'Scanning...';
+  status.className = 'status scanning';
+
+  const formData = {
+    minVolume: parseFloat(document.getElementById('minVolume').value) || 100000,
+    marketType: Array.from(document.getElementById('marketType').selectedOptions).map((opt) => opt.value),
+    exchanges: Array.from(document.getElementById('exchanges').selectedOptions).map((opt) => opt.value),
+    indicators: Array.from(document.getElementById('indicators').selectedOptions).map((opt) => opt.value),
+    signals: Array.from(document.getElementById('signals').selectedOptions).map((opt) => opt.value),
+    quoteCurrency: Array.from(document.getElementById('quoteCurrency').selectedOptions).map((opt) => opt.value),
+    orderTypes: Array.from(document.getElementById('orderTypes').selectedOptions).map((opt) => opt.value),
+    trend: Array.from(document.getElementById('trend').selectedOptions).map((opt) => opt.value),
+    fibLevels: Array.from(document.getElementById('fibLevels').selectedOptions).map((opt) => opt.value),
+    intervals: Array.from(document.getElementById('intervals').selectedOptions).map((opt) => opt.value),
+    bbPeriod: parseInt(document.getElementById('bbPeriod')?.value) || 20,
+    bbStdDev: parseFloat(document.getElementById('bbStdDev')?.value) || 2,
+    rsiPeriod: parseInt(document.getElementById('rsiPeriod')?.value) || 14,
+    // Add other parameters as needed
+  };
+
+  ws.send(JSON.stringify({ type: 'scan', data: formData }));
 });
 
 // Initialize WebSocket
 connectWebSocket();
-
-// Reset button state on page load
-scanBtn.disabled = false;
