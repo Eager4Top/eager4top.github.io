@@ -186,5 +186,14 @@ value="ETH" selected>ETH</option>
 
     <!-- External JavaScript -->
     <script src="script.js"></script>
+      <script>
+    const ws = new WebSocket('wss://brisk-1qsf.onrender.com/ws');
+    ws.onopen = () => {
+      ws.send(JSON.stringify({ type: 'scan', data: {} }));
+    };
+    ws.onmessage = (msg) => {
+      console.log('Received:', JSON.parse(msg.data));
+    };
+  </script>
 </body>
 </html>
