@@ -47,7 +47,7 @@ function connectWebSocket() {
     wsStatus.className = 'ws-status disconnected';
     scanBtn.disabled = true;
     console.log('WebSocket disconnected, reconnecting in 5s...');
-    setTimeout(connectWebSocket, 5000); // Reconnect after 5 seconds
+    setTimeout(connectWebSocket, 5000);
   };
 
   ws.onerror = (error) => {
@@ -68,7 +68,7 @@ function renderSignals(signals) {
   signals.forEach((signal) => {
     const signalCard = document.createElement('div');
     signalCard.className = `signal-card ${signal.type.toLowerCase()}`;
-sth     signalCard.innerHTML = `
+    signalCard.innerHTML = `
       <div class="signal-header">
         <span class="pair-name">${signal.pair}</span>
         <span class="signal-badge ${signal.type.toLowerCase()}">${signal.type}</span>
@@ -123,6 +123,9 @@ scannerForm.addEventListener('submit', (e) => {
     bbPeriod: parseInt(document.getElementById('bbPeriod')?.value) || 20,
     bbStdDev: parseFloat(document.getElementById('bbStdDev')?.value) || 2,
     rsiPeriod: parseInt(document.getElementById('rsiPeriod')?.value) || 14,
+    macdFast: parseInt(document.getElementById('macdFast')?.value) || 12,
+    macdSlow: parseInt(document.getElementById('macdSlow')?.value) || 26,
+    macdSignal: parseInt(document.getElementById('macdSignal')?.value) || 9,
     // Add other parameters as needed
   };
 
