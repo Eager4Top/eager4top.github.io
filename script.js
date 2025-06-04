@@ -7,7 +7,7 @@ const resultsContainer = document.getElementById('resultsContainer');
 const scannerForm = document.getElementById('scannerForm');
 
 function connectWebSocket() {
-  const wsUrl = `wss://${process.env.RENDER_EXTERNAL_HOSTNAME || 'localhost:3000'}/ws`;
+  const wsUrl = `wss://${process.env.RENDER_EXTERNAL_HOSTNAME || 'localhost'}/ws`; // Remove hardcoded port
   ws = new WebSocket(wsUrl);
 
   ws.onopen = () => {
