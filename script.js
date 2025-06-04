@@ -1,4 +1,3 @@
-// WebSocket connection
 let ws;
 const wsStatus = document.getElementById('wsStatus');
 const scanBtn = document.getElementById('scanBtn');
@@ -125,12 +124,10 @@ scannerForm.addEventListener('submit', (e) => {
     rsiPeriod: parseInt(document.getElementById('rsiPeriod')?.value) || 14,
     macdFast: parseInt(document.getElementById('macdFast')?.value) || 12,
     macdSlow: parseInt(document.getElementById('macdSlow')?.value) || 26,
-    macdSignal: parseInt(document.getElementById('macdSignal')?.value) || 9,
-    // Add other parameters as needed
+    macdSignal: parseInt(document.getElementById('macdSignal')?.value) || 9
   };
 
   ws.send(JSON.stringify({ type: 'scan', data: formData }));
 });
 
-// Initialize WebSocket
 connectWebSocket();
