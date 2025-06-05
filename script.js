@@ -94,7 +94,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     status.textContent = 'Scanning...';
     if (ws && ws.readyState === WebSocket.OPEN) {
       ws.send(JSON.stringify({
-        chatId: 'YOUR_CHAT_ID', // Replace with your Telegram chat ID
+        chatId: '303763648', // Replace with your Telegram chat ID
         text: 'Scan requested. Learn more at https://eager4top.github.io',
       }));
     } else {
