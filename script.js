@@ -43,7 +43,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     console.log(`Attempting WebSocket connection (Attempt ${reconnectAttempts + 1})`);
-    ws = new WebSocket('wss://brisk-1qsf.onrender.com/ws');
+    ws = new WebSocket(`wss://brisk-1qsf.onrender.com/ws?token=${encodeURIComponent('your-secret-token')}`);
 
     ws.onopen = () => {
       wsStatus.textContent = 'WebSocket: Connected';
@@ -55,13 +55,21 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     ws.onmessage = (event) => {
       try {
-        const data = JSON.parse(event.data);
-        if (data.error) {
+        const { type, data } = JSON.parse(event.data);
+        if (type === 'signals') {
+          status.textContent = `Received ${data.length} signals`;
+          resultsContainer.innerHTML = ''; // Clear previous results
+          data.forEach(signal => {
+            const signalElement = document.createElement('div');
+            signalElement.textContent = `${signal.exchange} | ${signal.symbol} | Timeframe(s): ${signal.timeframes ? signal.timeframes.join(', ') : signal.timeframe} | ${signal.indicator}: ${signal.signals.join(', ')} | Order: ${signal.orderType || 'N/A'} | Trend: ${signal.trend}`;
+            resultsContainer.appendChild(signalElement);
+          });
+        } else if (data.error) {
           status.textContent = `Error: ${data.error}`;
           resultsContainer.textContent = `Error: ${data.error}`;
         } else {
-          status.textContent = 'Scan received';
-          resultsContainer.textContent = `Result: ${data.result.text || 'No data'}`;
+          status.textContent = 'Message received';
+          resultsContainer.textContent = JSON.stringify(data, null, 2);
         }
       } catch (error) {
         console.error('WebSocket message error:', error);
@@ -91,11 +99,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   scanBtn.addEventListener('click', async () => {
     scanBtn.disabled = true;
-    status.textContent = 'Scanning...';
+    status.textContent = 'Requesting scan...';
     if (ws && ws.readyState === WebSocket.OPEN) {
       ws.send(JSON.stringify({
-        chatId: '303763648', // Replace with your Telegram chat ID
-        text: 'Scan requested. Learn more at https://eager4top.github.io',
+        chatId: process.env.TELEGRAM_CHAT_ID || 'YOUR_CHAT_ID', // Replace with your Telegram chat ID
+        text: 'Scan requested for BRISK AI Trading Bot. Learn more at https://eager4top.github.io',
       }));
     } else {
       status.textContent = 'Error: WebSocket not connected';
@@ -105,7 +113,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     setTimeout(() => {
       scanBtn.disabled = false;
       if (!ws || ws.readyState !== WebSocket.OPEN) {
-        status.textContent = 'Scan failed: WebSocket disconnected';
+        status.textContent = 'Scan request failed: WebSocket disconnected';
       }
     }, 1000);
   });
