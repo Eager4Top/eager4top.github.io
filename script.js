@@ -114,7 +114,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Send settings to WebSocket
     if (ws.readyState === WebSocket.OPEN) {
       ws.send(JSON.stringify({
-        chatId: 'YOUR_CHAT_ID', // Replace with valid chat ID from logs
+        chatId: '303763648', // Replace with valid chat ID from logs
         text: JSON.stringify(settings),
       }));
     } else {
